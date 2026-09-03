@@ -216,3 +216,47 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Audio data - never commit actual datasets
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.wav
+*.mp3
+*.flac
+
+# Model checkpoints - too large for git
+*.pt
+*.pth
+*.ckpt
+*.h5
+models/checkpoints/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Experiment outputs/logs
+experiments/**/logs/
+experiments/**/*.log
+
+# Environment
+.env
+venv/
+env/
+
+# OS junk
+.DS_Store
+Thumbs.db
