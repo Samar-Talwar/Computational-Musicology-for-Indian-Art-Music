@@ -1,4 +1,5 @@
 """Tests for preprocessing.stft - STFT computation."""
+
 import numpy as np
 import pytest
 import librosa

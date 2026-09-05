@@ -1,4 +1,5 @@
 """STFT computation - wraps librosa.stft with project defaults."""
+
 import numpy as np
 import librosa
 

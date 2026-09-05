@@ -1,4 +1,5 @@
 """Tests for preprocessing.hpss - Harmonic-Percussive Source Separation."""
+
 import numpy as np
 import pytest
 import librosa
@@ -45,13 +46,13 @@ class TestHPSS:
         S_orig = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
         ratio = (S_h + S_p) / (S_orig + 1e-10)
         # Soft mask ensures ratio <= 1.0 + 1e-6 everywhere
-        assert ratio.max() <= 1.0 + 1e-6, (
-            f"H + P must not exceed original: max ratio = {ratio.max()}"
-        )
+        assert (
+            ratio.max() <= 1.0 + 1e-6
+        ), f"H + P must not exceed original: max ratio = {ratio.max()}"
         # Median filter can drop a small fraction of cells; 0.7 is a loose floor
-        assert ratio.min() >= 0.7, (
-            f"H + P dropped too far below original: min ratio = {ratio.min()}"
-        )
+        assert (
+            ratio.min() >= 0.7
+        ), f"H + P dropped too far below original: min ratio = {ratio.min()}"
 
     def test_harmonic_has_more_energy_at_440hz(self, synthetic_signal):
         """The harmonic component should dominate at 440 Hz."""
@@ -60,9 +61,9 @@ class TestHPSS:
         bin_440 = int(440 * 2048 / sr)
         h_energy = np.mean(S_h[bin_440, :])
         p_energy = np.mean(S_p[bin_440, :])
-        assert h_energy > p_energy, (
-            f"Harmonic should dominate at 440 Hz: h={h_energy:.4f}, p={p_energy:.4f}"
-        )
+        assert (
+            h_energy > p_energy
+        ), f"Harmonic should dominate at 440 Hz: h={h_energy:.4f}, p={p_energy:.4f}"
 
     def test_percussive_has_more_energy_at_clicks(self, synthetic_signal):
         """At click frames, percussive energy across all freq bins should spike."""
