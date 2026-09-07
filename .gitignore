@@ -260,3 +260,8 @@ env/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Claude Code local state - worktrees, settings
+.claude/worktrees/
+.claude/settings.json
+.claude/settings.local.json

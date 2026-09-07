@@ -44,6 +44,7 @@ docs/            # Research notes, literature review
 
 - **Strict TDD** for `preprocessing/`, `models/`, `evaluation/` — clear I/O contracts, write the failing test first
 - **Exploratory-first** for spectrogram/HPSS parameter tuning in `notebooks/` — visualize and listen before writing tests; extract to `preprocessing/` with tests only once a technique is chosen
+- **Synthetic test fixtures must match production dtype.** Any test signal generated via numpy (`np.sin`, `np.linspace`, etc.) defaults to `float64`, but real audio loaded via `librosa.load()` is `float32`. A test that passes on a `float64` synthetic fixture can silently fail once real `float32` audio flows through the same code path. Always explicitly cast synthetic fixtures to `float32` unless there's a documented reason not to.
 
 ## Git Workflow
 

@@ -17,7 +17,8 @@ def synthetic_signal():
     for ct in np.arange(0, 2.0, 0.25):
         idx = int(ct * sr)
         percussive[idx : idx + int(0.005 * sr)] = 0.8
-    return harmonic + percussive, sr
+    # Cast to float32 to match librosa.load() production dtype
+    return (harmonic + percussive).astype(np.float32), sr
 
 
 class TestHPSS:
@@ -34,25 +35,31 @@ class TestHPSS:
         assert np.all(S_p >= 0)
 
     def test_components_sum_to_original(self, synthetic_signal):
-        """Soft-masked H + P is strictly ≤ original magnitude (Wiener mask).
+        """Per librosa's contract, with margin=1.0 the soft mask decomposes
+        S = H + P exactly (floating-point tolerance only). |H| + |P| should
+        equal |S| to ~1e-6 relative precision everywhere.
 
-        The Wiener soft mask is (H^2 * m) / (H^2 * m + P^2 * m + eps), so
-        mask_H + mask_P < 1 always — H + P ≤ S_orig, never exceeds. We assert
-        the upper bound tightly and the lower bound loosely (median filtering
-        can leave a few low-energy cells with sum < 0.95 of original).
+        Use np.maximum(S_orig, tiny) to divide — adding 1e-10 to the
+        denominator biases the ratio at every cell where |S| is comparable
+        to the eps (sub-1e-9 cells, which dominate for a quiet signal). That
+        bias masquerades as a structural "soft-mask under-sum" but is purely
+        a numerical artifact in the test itself.
         """
         y, sr = synthetic_signal
         S_h, S_p = hpss(y, sr=sr, n_fft=2048, hop_length=512)
         S_orig = np.abs(librosa.stft(y, n_fft=2048, hop_length=512))
-        ratio = (S_h + S_p) / (S_orig + 1e-10)
-        # Soft mask ensures ratio <= 1.0 + 1e-6 everywhere
-        assert (
-            ratio.max() <= 1.0 + 1e-6
-        ), f"H + P must not exceed original: max ratio = {ratio.max()}"
-        # Median filter can drop a small fraction of cells; 0.7 is a loose floor
-        assert (
-            ratio.min() >= 0.7
-        ), f"H + P dropped too far below original: min ratio = {ratio.min()}"
+        # Guard divide-by-zero only — do not bias low-magnitude cells.
+        ratio = (S_h + S_p) / np.maximum(S_orig, 1e-300)
+        np.testing.assert_allclose(
+            ratio,
+            np.ones_like(ratio),
+            rtol=1e-4,
+            atol=1e-7,
+            err_msg=(
+                f"H + P should equal S_orig (margin=1.0 contract); "
+                f"ratio range = [{ratio.min():.6f}, {ratio.max():.6f}]"
+            ),
+        )
 
     def test_harmonic_has_more_energy_at_440hz(self, synthetic_signal):
         """The harmonic component should dominate at 440 Hz."""
