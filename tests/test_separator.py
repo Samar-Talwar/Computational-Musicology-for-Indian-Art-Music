@@ -41,3 +41,31 @@ def test_separate_mono_duplicates_to_stereo():
     for i in range(4):
         assert not np.all(stems[i] == 0), f"Stem {i} is all zeros"
 
+
+def test_separate_invalid_channels_raises_value_error():
+    """Passing 3-channel or 5-channel audio raises ValueError."""
+    from models.separator import separate
+
+    audio_3ch = np.random.randn(3, 44100).astype(np.float32)
+    with pytest.raises(ValueError, match="Expected 2 channels"):
+        separate(audio_3ch, sr=44100)
+
+
+def test_separate_invalid_sr_raises_value_error():
+    """Sampling rate mismatch raises ValueError."""
+    from models.separator import separate
+
+    audio = np.random.randn(2, 44100).astype(np.float32)
+    with pytest.raises(ValueError, match="Expected sr=44100"):
+        separate(audio, sr=22050)
+
+
+def test_separate_invalid_ndim_raises_value_error():
+    """Invalid dimension (e.g. 3D array) raises ValueError."""
+    from models.separator import separate
+
+    audio_3d = np.random.randn(1, 2, 44100).astype(np.float32)
+    with pytest.raises(ValueError, match="audio must be 1D"):
+        separate(audio_3d, sr=44100)
+
+
