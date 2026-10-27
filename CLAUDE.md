@@ -35,7 +35,7 @@ docs/            # Research notes, literature review
 
 ## Conventions
 
-- Evaluation metrics: use `mir_eval` for SDR, SIR, SAR, SI-SDR (don't reimplement)
+- Evaluation metrics: use `mir_eval.separation.bss_eval_sources` for SDR/SIR/SAR; compute zero-mean scale-invariant SI-SDR locally in `evaluation/metrics.py` since `mir_eval 0.8.2` omits SI-SDR and `bss_eval_sources` is deprecated (will be removed in 0.9).
 - Audio I/O: `librosa.load()` for reading, `soundfile.write()` for writing
 - Model checkpoints are gitignored (`*.pt`, `*.pth`, `*.ckpt`, `*.h5`)
 - Formatter: `black`
