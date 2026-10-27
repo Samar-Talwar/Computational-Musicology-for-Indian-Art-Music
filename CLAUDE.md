@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Acoustic source separation pipeline for Indian classical music — benchmarking against the Spleeter/Sanidha baseline (arXiv:2501.06959). Four pipeline stages: spectrogram profiling & HPSS → neural model fine-tuning → waveform resynthesis → instrument classification. Benchmark target: SDR ~7.87 (Sanidha paper's fine-tuned Spleeter) — this is a locked comparative benchmark, not open-ended exploration.
+Acoustic source separation pipeline for Indian classical music — benchmarking against the Sanidha baseline (arXiv:2501.06959). Four pipeline stages: spectrogram profiling & HPSS → neural model fine-tuning → waveform resynthesis → instrument classification. Benchmark target: SDR ~7.87 (Sanidha paper's fine-tuned Spleeter, 2-stem vocal/accompaniment split) — this is a locked comparative benchmark, not open-ended exploration. No 4-stem SDR may be compared to it without an explicit methodological note.
 
 ## Environment
 
-- Python 3.13, Windows, venv at `./venv/`
-- Activate: `.\venv\Scripts\Activate.ps1`
+- Python 3.13, Windows, venv at `./.venv/`
+- Activate: `.\.venv\Scripts\Activate.ps1`
 - Install deps: `pip install -r requirements.txt`
-- Key libraries: librosa, scipy, numpy, scikit-learn, matplotlib, mir_eval, mirdata, soundfile, h5py, pandas, jupyter
+- Key libraries: librosa, scipy, numpy, scikit-learn, matplotlib, mir_eval, mirdata, soundfile, h5py, pandas, jupyter, torch, demucs-infer
 
 ## Datasets
 
@@ -90,5 +90,10 @@ A plan is considered reviewed only when:
 - the reviewer reports no blocking issues, OR
 - every blocking issue is fixed and the revised plan is reviewed again.
 
+## Resolved Decisions
+- **Spleeter → demucs-infer:** Replaced by `demucs-infer==4.2.2` (HDemucs, PyTorch), because Spleeter's TensorFlow is incompatible with Python 3.13.
+
 ## Open Decisions
-- **Spleeter baseline reproduction method (deferred to Milestone 2 proper, once Sanidha access is granted):** Official Spleeter (TensorFlow) is incompatible with our Python 3.13 environment. Options to decide later: (a) reproduce Spleeter in an isolated old-Python venv/Docker purely to generate our own comparable SDR numbers under our own eval pipeline, or (b) cite Sanidha paper's published SDR (~7.87 target) directly, with an explicitly documented caveat that this compares our pipeline's evaluation against their pipeline's evaluation rather than an apples-to-apples reproduction. Not resolved yet — do not silently pick one.
+- **Spleeter baseline reproduction method:** (a) reproduce Spleeter in an isolated old-Python venv/Docker purely to generate our own comparable SDR numbers under our own eval pipeline, or (b) cite Sanidha paper's published SDR (~7.87 target) directly, with an explicitly documented caveat that this compares our pipeline's evaluation against their pipeline's evaluation rather than an apples-to-apples reproduction. Not resolved yet — do not silently pick one.
+- **2-stem vs 4-stem benchmark scope:** The ~7.87 SDR target is a 2-stem (vocal vs accompaniment) number. Our demucs-infer pipeline produces 4 stems (drums, bass, other, vocals). Decision needed: compare on a 2-stem basis (sum non-vocal stems into accompaniment) or define a separate 4-stem evaluation with its own baseline.
+- **Artist-overlap leakage across Sanidha concerts:** All 5 concerts are local (61.5 GB). Current split: concerts 1, 2, 4, 5 for training / concert 3 for validation / no held-out test set. Audit whether artists overlap across concerts (unverified); decide test split.
