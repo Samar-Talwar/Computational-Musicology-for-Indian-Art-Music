@@ -1,0 +1,352 @@
+{
+  "concert": "Concert03 (val)",
+  "songs_evaluated": 6,
+  "per_song_results": [
+    {
+      "record_id": "3/01-Vanajakshi-Varnam",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 286.28600907029477,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -26.91660499572754,
+          "SDR_median": -26.91660499572754,
+          "SIR_mean": -5.758337497711182,
+          "SIR_median": -5.758337497711182,
+          "SAR_mean": -20.102031707763672,
+          "SAR_median": -20.102031707763672,
+          "SI-SDR_mean": -38.51515197753906,
+          "SI-SDR_median": -38.51515197753906
+        },
+        "accompaniment": {
+          "SDR_mean": -21.05441665649414,
+          "SDR_median": -21.05441665649414,
+          "SIR_mean": 5.870980262756348,
+          "SIR_median": 5.870980262756348,
+          "SAR_mean": -20.046152114868164,
+          "SAR_median": -20.046152114868164,
+          "SI-SDR_mean": -42.76067352294922,
+          "SI-SDR_median": -42.76067352294922
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -21.05441590180601,
+              "SIR": 5.87098031221783,
+              "SAR": -20.046151351320756,
+              "SI-SDR": -42.760671809120595
+            },
+            "vocals": {
+              "SDR": -26.916604412654305,
+              "SIR": -5.758337708730192,
+              "SAR": -20.102031061329008,
+              "SI-SDR": -38.515153072940635
+            }
+          }
+        }
+      ]
+    },
+    {
+      "record_id": "3/02-Sharanam-Bhavan",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 677.2432426303855,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -27.335033416748047,
+          "SDR_median": -27.335033416748047,
+          "SIR_mean": -4.33642053604126,
+          "SIR_median": -4.33642053604126,
+          "SAR_mean": -21.61451530456543,
+          "SAR_median": -21.61451530456543,
+          "SI-SDR_mean": -42.25730895996094,
+          "SI-SDR_median": -42.25730895996094
+        },
+        "accompaniment": {
+          "SDR_mean": -22.941587448120117,
+          "SDR_median": -22.941587448120117,
+          "SIR_mean": 4.315077304840088,
+          "SIR_median": 4.315077304840088,
+          "SAR_mean": -21.56532859802246,
+          "SAR_median": -21.56532859802246,
+          "SI-SDR_mean": -38.8429069519043,
+          "SI-SDR_median": -38.8429069519043
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -22.941586500626254,
+              "SIR": 4.315077365843633,
+              "SAR": -21.565327859091294,
+              "SI-SDR": -38.8429080942045
+            },
+            "vocals": {
+              "SDR": -27.335034177214926,
+              "SIR": -4.336420381751976,
+              "SAR": -21.614514850743724,
+              "SI-SDR": -42.25731041154649
+            }
+          }
+        }
+      ]
+    },
+    {
+      "record_id": "3/03-Shambo-Sathatham",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 1211.7104988662131,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -26.374387741088867,
+          "SDR_median": -26.374387741088867,
+          "SIR_mean": -5.5661211013793945,
+          "SIR_median": -5.5661211013793945,
+          "SAR_mean": -19.708175659179688,
+          "SAR_median": -19.708175659179688,
+          "SI-SDR_mean": -33.494384765625,
+          "SI-SDR_median": -33.494384765625
+        },
+        "accompaniment": {
+          "SDR_mean": -20.88173484802246,
+          "SDR_median": -20.88173484802246,
+          "SIR_mean": 5.185637474060059,
+          "SIR_median": 5.185637474060059,
+          "SAR_mean": -19.721542358398438,
+          "SAR_median": -19.721542358398438,
+          "SI-SDR_mean": -46.32601547241211,
+          "SI-SDR_median": -46.32601547241211
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -20.881735472309735,
+              "SIR": 5.185637655264461,
+              "SAR": -19.72154314588409,
+              "SI-SDR": -46.32601499802736
+            },
+            "vocals": {
+              "SDR": -26.374387192340812,
+              "SIR": -5.566121227531486,
+              "SAR": -19.70817552167226,
+              "SI-SDR": -33.49438473548631
+            }
+          }
+        }
+      ]
+    },
+    {
+      "record_id": "3/04-Baaraiya-Ranga",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 237.0034240362812,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -27.403255462646484,
+          "SDR_median": -27.403255462646484,
+          "SIR_mean": 2.865400791168213,
+          "SIR_median": 2.865400791168213,
+          "SAR_mean": -25.58791160583496,
+          "SAR_median": -25.58791160583496,
+          "SI-SDR_mean": -36.618507385253906,
+          "SI-SDR_median": -36.618507385253906
+        },
+        "accompaniment": {
+          "SDR_mean": -30.609554290771484,
+          "SDR_median": -30.609554290771484,
+          "SIR_mean": -3.225189685821533,
+          "SIR_median": -3.225189685821533,
+          "SAR_mean": -25.685964584350586,
+          "SAR_median": -25.685964584350586,
+          "SI-SDR_mean": -42.32743453979492,
+          "SI-SDR_median": -42.32743453979492
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -30.609554465760926,
+              "SIR": -3.225189760801898,
+              "SAR": -25.685964545105122,
+              "SI-SDR": -42.32743400759644
+            },
+            "vocals": {
+              "SDR": -27.403254602609167,
+              "SIR": 2.8654008272242475,
+              "SAR": -25.587912470910545,
+              "SI-SDR": -36.61850691766324
+            }
+          }
+        }
+      ]
+    },
+    {
+      "record_id": "3/05-Ramanatham-Bhajeham",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 2146.444308390023,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -25.5886287689209,
+          "SDR_median": -25.5886287689209,
+          "SIR_mean": -2.7491555213928223,
+          "SIR_median": -2.7491555213928223,
+          "SAR_mean": -20.967105865478516,
+          "SAR_median": -20.967105865478516,
+          "SI-SDR_mean": -40.51954650878906,
+          "SI-SDR_median": -40.51954650878906
+        },
+        "accompaniment": {
+          "SDR_mean": -23.401161193847656,
+          "SDR_median": -23.401161193847656,
+          "SIR_mean": 1.1221822500228882,
+          "SIR_median": 1.1221822500228882,
+          "SAR_mean": -20.900449752807617,
+          "SAR_median": -20.900449752807617,
+          "SI-SDR_mean": -47.1929931640625,
+          "SI-SDR_median": -47.1929931640625
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -23.401160427710117,
+              "SIR": 1.1221822318784251,
+              "SAR": -20.900449372046978,
+              "SI-SDR": -47.192991498075365
+            },
+            "vocals": {
+              "SDR": -25.588629314337588,
+              "SIR": -2.749155414483352,
+              "SAR": -20.967106519091317,
+              "SI-SDR": -40.51954563926468
+            }
+          }
+        }
+      ]
+    },
+    {
+      "record_id": "3/06-Venkatachala-Nilayam",
+      "segment_duration_sec": 10.0,
+      "max_segments": 1,
+      "total_duration_sec": 384.5508163265306,
+      "valid_windows": 1,
+      "skipped_silent_ref_windows": 0,
+      "skipped_silent_est_windows": 0,
+      "per_song_mean_median": {
+        "vocals": {
+          "SDR_mean": -26.350582122802734,
+          "SDR_median": -26.350582122802734,
+          "SIR_mean": -3.665727138519287,
+          "SIR_median": -3.665727138519287,
+          "SAR_mean": -21.10802459716797,
+          "SAR_median": -21.10802459716797,
+          "SI-SDR_mean": -35.40449905395508,
+          "SI-SDR_median": -35.40449905395508
+        },
+        "accompaniment": {
+          "SDR_mean": -22.938812255859375,
+          "SDR_median": -22.938812255859375,
+          "SIR_mean": 2.7696170806884766,
+          "SIR_median": 2.7696170806884766,
+          "SAR_mean": -21.084484100341797,
+          "SAR_median": -21.084484100341797,
+          "SI-SDR_mean": -37.66689682006836,
+          "SI-SDR_median": -37.66689682006836
+        }
+      },
+      "windows": [
+        {
+          "window_idx": 0,
+          "start_sec": 0.0,
+          "end_sec": 10.0,
+          "skipped_silent_ref": false,
+          "skipped_silent_est": false,
+          "scores": {
+            "accompaniment": {
+              "SDR": -22.938811524968276,
+              "SIR": 2.769617134540587,
+              "SAR": -21.084483908665455,
+              "SI-SDR": -37.666896544770445
+            },
+            "vocals": {
+              "SDR": -26.350582329731484,
+              "SIR": -3.665727045912088,
+              "SAR": -21.10802381256987,
+              "SI-SDR": -35.40449893529441
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "overall_mean_median": {
+    "vocals": {
+      "SDR_mean": -26.661415100097656,
+      "SDR_median": -26.645496368408203,
+      "SIR_mean": -3.2017269134521484,
+      "SIR_median": -4.001073837280273,
+      "SAR_mean": -21.51462745666504,
+      "SAR_median": -21.037565231323242,
+      "SI-SDR_mean": -37.80156326293945,
+      "SI-SDR_median": -37.566829681396484
+    },
+    "accompaniment": {
+      "SDR_mean": -23.63787841796875,
+      "SDR_median": -22.940200805664062,
+      "SIR_mean": 2.67305064201355,
+      "SIR_median": 3.5423471927642822,
+      "SAR_mean": -21.500654220581055,
+      "SAR_median": -20.99246597290039,
+      "SI-SDR_mean": -42.51948928833008,
+      "SI-SDR_median": -42.54405212402344
+    }
+  }
+}
