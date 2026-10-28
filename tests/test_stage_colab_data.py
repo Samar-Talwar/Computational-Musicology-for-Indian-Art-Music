@@ -1,0 +1,78 @@
+"""TDD Step 1 — tests/test_stage_colab_data.py (will fail until scripts/stage_colab_data.py exists)."""
+import sys
+from pathlib import Path
+import numpy as np
+import pytest
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+
+@pytest.fixture
+def synthetic_colab_record(tmp_path):
+    """Synthetic Sanidha-style record with 2 logical stems (vocals + accompaniment source) for staging."""
+    import soundfile as sf
+    sr = 44100
+    # 10-second synthetic audio, float32, stereo (2, N)
+    n = sr * 10
+    vocals = np.random.default_rng(42).standard_normal((2, n), dtype=np.float32) * 0.5
+    violin = np.random.default_rng(43).standard_normal((2, n), dtype=np.float32) * 0.3
+    clean = tmp_path / "Concert01" / "01-SongA" / "Audio-Multitracks-Clean"
+    clean.mkdir(parents=True)
+    sf.write(clean / "vocals.wav", vocals.T, sr, subtype="PCM_16")
+    sf.write(clean / "violin-1.wav", violin.T, sr, subtype="PCM_16")
+    sf.write(clean / "violin-2.wav", violin.T, sr, subtype="PCM_16")
+    sf.write(clean / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
+    from utils.sanidha import SongRecord
+    return SongRecord(
+        concert_id=1, song_id="01-SongA", folder=clean,
+        stem_files={
+            "vocals": (clean / "vocals.wav",),
+            "violin": (clean / "violin-1.wav", clean / "violin-2.wav"),
+            "tanpura": (clean / "tanpura.wav",),
+        },
+    )
+
+
+class TestStageColab:
+    def test_stage_song_exists(self, synthetic_colab_record, tmp_path):
+        from scripts.stage_colab_data import stage_song
+        chunks = stage_song(synthetic_colab_record, tmp_path / "out", chunk_duration_sec=6.0)
+        assert isinstance(chunks, list)
+        # 10 sec / 6 sec = 1 full chunk; trailing 4 sec dropped
+        assert len(chunks) == 1
+
+    def test_stage_dataset_exists(self, synthetic_colab_record, tmp_path):
+        from scripts.stage_colab_data import stage_dataset
+        # Need mini root; synthetic fixture puts under tmp_path/Concert01/...
+        root = synthetic_colab_record.folder.parent.parent.parent
+        result = stage_dataset(root, tmp_path / "staged", max_songs=1)
+        assert isinstance(result, Path)
+        assert (tmp_path / "staged" / "manifest.csv").exists()
+
+    def test_chunk_files_written_float32(self, synthetic_colab_record, tmp_path):
+        from scripts.stage_colab_data import stage_song
+        stage_song(synthetic_colab_record, tmp_path / "staged")
+        chunks_dir = tmp_path / "staged" / "chunks"
+        # At least one chunk dir
+        dirs = [d for d in chunks_dir.iterdir() if d.is_dir()]
+        assert len(dirs) >= 1
+        mix = dirs[0] / "mix.wav"
+        assert mix.exists()
+
+    def test_energy_filter_skips_silent(self, synthetic_colab_record, tmp_path):
+        from scripts.stage_colab_data import stage_song
+        # Make vocals silent -> should produce 0 chunks
+        import soundfile as sf
+        rec = synthetic_colab_record
+        bad_path = rec.folder / "vocals.wav"
+        data, sr = sf.read(bad_path, dtype="float32")
+        silent = np.zeros_like(data)
+        sf.write(bad_path, silent, sr, subtype="PCM_16")
+        try:
+            chunks = stage_song(rec, tmp_path / "silent_out", chunk_duration_sec=6.0)
+            # Zero chunk dirs because all windows silent
+            chunk_dirs = [d for d in (tmp_path / "silent_out" / "chunks").iterdir() if d.is_dir()]
+            assert len(chunk_dirs) == 0
+            assert len(chunks) == 0
+        finally:
+            sf.write(bad_path, data, sr, subtype="PCM_16")
