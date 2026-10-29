@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """Staging dataset for Colab fine-tuning — Milestone 2 Step 4."""
 from __future__ import annotations
+import sys
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 import csv
 import argparse
 from pathlib import Path
@@ -123,16 +128,35 @@ def stage_dataset(
     records = index_sanidha(dataset_root)
     train, _ = split_sanidha(records, train_concerts=train_concerts, val_concerts=(3,))
 
+    manifest_records: list[dict[str, Any]] = []
     total_chunks = 0
+
     for rec in train:
         if max_songs is not None and total_chunks >= max_songs:
             break
-        stage_song(rec, output_dir, chunk_duration_sec=chunk_duration_sec)
-        # Count chunks from manifest for dry-run tracking
-        manifest_path = output_dir / "manifest.csv"
-        if manifest_path.exists():
-            with open(manifest_path) as f:
-                total_chunks = sum(1 for _ in f) - 1  # minus header
+        chunks_meta = stage_song(
+            rec, output_dir,
+            chunk_duration_sec=chunk_duration_sec,
+            include_tanpura=True,
+        )
+        manifest_records.extend(chunks_meta)
+        total_chunks = len(manifest_records)
+
+    # Write manifest once at the end
+    manifest_path = output_dir / "manifest.csv"
+    with open(manifest_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "chunk_id", "concert_id", "song_id", "start_sec",
+            "duration_sec", "mix_path", "vocals_path", "accompaniment_path",
+        ])
+        for row in manifest_records:
+            writer.writerow([
+                row["chunk_id"], row["concert_id"], row["song_id"],
+                f"{row['start_sec']:.1f}", f"{row['duration_sec']:.1f}",
+                row["mix_path"], row["vocals_path"], row["accompaniment_path"],
+            ])
+
     return output_dir
 
 
@@ -142,10 +166,14 @@ def main():
     parser.add_argument("--output-dir", default="data/staged")
     parser.add_argument("--chunk-duration", type=float, default=6.0)
     parser.add_argument("--max-songs", type=int, default=None)
+    parser.add_argument("--train-concerts", nargs="+", type=int, default=[1, 4, 5])
     args = parser.parse_args()
+    if 3 in args.train_concerts:
+        raise ValueError("Concert 3 is the validation set and cannot be staged for training.")
     stage_dataset(
         Path(args.dataset_root),
         Path(args.output_dir),
+        train_concerts=tuple(args.train_concerts),
         chunk_duration_sec=args.chunk_duration,
         max_songs=args.max_songs,
     )

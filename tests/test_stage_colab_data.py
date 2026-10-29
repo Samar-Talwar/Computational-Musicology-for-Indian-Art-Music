@@ -76,3 +76,49 @@ class TestStageColab:
             assert len(chunks) == 0
         finally:
             sf.write(bad_path, data, sr, subtype="PCM_16")
+
+    def test_stage_dataset_accumulates_multiple_songs(self, tmp_path):
+        from scripts.stage_colab_data import stage_dataset
+        import soundfile as sf
+        import numpy as np
+
+        # Create two synthetic songs under different concerts
+        sr = 44100
+        n = sr * 10  # 10 seconds each
+
+        # Song 1 in Concert01
+        clean1 = tmp_path / "Concert01" / "01-SongA" / "Audio-Multitracks-Clean"
+        clean1.mkdir(parents=True)
+        v1 = np.random.default_rng(1).standard_normal((2, n), dtype=np.float32) * 0.5
+        vi1 = np.random.default_rng(2).standard_normal((2, n), dtype=np.float32) * 0.3
+        sf.write(clean1 / "vocals.wav", v1.T, sr, subtype="PCM_16")
+        sf.write(clean1 / "violin-1.wav", vi1.T, sr, subtype="PCM_16")
+        sf.write(clean1 / "violin-2.wav", vi1.T, sr, subtype="PCM_16")
+        sf.write(clean1 / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
+
+        # Song 2 in Concert02
+        clean2 = tmp_path / "Concert02" / "02-SongB" / "Audio-Multitracks-Clean"
+        clean2.mkdir(parents=True)
+        v2 = np.random.default_rng(3).standard_normal((2, n), dtype=np.float32) * 0.5
+        vi2 = np.random.default_rng(4).standard_normal((2, n), dtype=np.float32) * 0.3
+        sf.write(clean2 / "vocals.wav", v2.T, sr, subtype="PCM_16")
+        sf.write(clean2 / "violin-1.wav", vi2.T, sr, subtype="PCM_16")
+        sf.write(clean2 / "violin-2.wav", vi2.T, sr, subtype="PCM_16")
+        sf.write(clean2 / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
+
+        # Stage both
+        root = tmp_path
+        result = stage_dataset(root, tmp_path / "staged", train_concerts=(1, 2), max_songs=2)
+        assert isinstance(result, Path)
+
+        # Read manifest and verify both songs present
+        import csv
+        manifest_path = tmp_path / "staged" / "manifest.csv"
+        assert manifest_path.exists()
+        with open(manifest_path) as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        # Should have 2 chunks (1 per song, 10s/6s = 1 chunk each)
+        assert len(rows) == 2
+        song_ids = {r["song_id"] for r in rows}
+        assert song_ids == {"01-SongA", "02-SongB"}
