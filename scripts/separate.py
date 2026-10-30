@@ -61,6 +61,9 @@ def separate_file(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     audio, sr = sf.read(input_path, dtype="float32", always_2d=True)
+    # Explicit SR validation before any resampling
+    if sr != TARGET_SR:
+        raise ValueError(f"Sample rate must be {TARGET_SR} Hz, got {sr}")
     audio = audio.T  # (C, N)
     audio, sr = _resample_if_needed(audio, sr, TARGET_SR)
     audio = _ensure_stereo(audio)

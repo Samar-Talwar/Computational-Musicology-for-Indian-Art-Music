@@ -27,39 +27,22 @@ class TestSeparateFile:
 
     def _fake_model(self, monkeypatch):
         from models.separator import HDemucs2Stem
+        import torch.nn as nn
+        import torch
 
-        import torch.nn as nn
-        import torch.nn as nn
-        class Dummy(nn.Module):
+        class DummySeparator(nn.Module):
             def __init__(self, freeze_encoders=True, checkpoint_path=None):
-                super().__init__()
-            def eval(self, mode=True):
-                return self
-            def to(self, *args, **kwargs):
-                return self
-            def forward(self, mix):
-                B, C, T = mix.shape
-                assert C == 2
-                out = torch.zeros((B, 2, C, T), dtype=torch.float32)
-                out[:, 0, :, :] = mix
-                out[:, 1, :, :] = mix * 0.5
-                assert out.shape == (B, 2, 2, T)
-                return out
-        monkeypatch.setattr(HDemucs2Stem, "__init__", Dummy.__init__)
-        monkeypatch.setattr(HDemucs2Stem, "forward", Dummy.forward)
+                torch.nn.Module.__init__(self)
+                self.audio_channels = 2
+                self.samplerate = 44100
+                self.sources = ["vocals", "accompaniment"]
 
-        def forward(self, mix):
-            # mix: (B, 2, T) -> (B, 2, 2, T) per spec; vocals = mix, acc = mix*0.5
-            B, C, T = mix.shape
-            assert C == 2, f"Expected stereo mix, got {C} ch"
-            out = torch.zeros((B, 2, C, T), dtype=torch.float32)
-            out[:, 0, :, :] = mix  # vocals = input (non-zero!)
-            out[:, 1, :, :] = mix * 0.5  # accompaniment = half
-            assert out.shape == (B, 2, 2, T)
-            return out
+            def forward(self, mix: torch.Tensor) -> torch.Tensor:
+                # mix: (B, 2, T) -> (B, 2, 2, T) [vocals, accompaniment], each (2, T)
+                return torch.stack([mix, mix * 0.5], dim=1)
 
-        monkeypatch.setattr(HDemucs2Stem, "__init__", __init__)
-        monkeypatch.setattr(HDemucs2Stem, "forward", forward)
+        monkeypatch.setattr(HDemucs2Stem, "__init__", DummySeparator.__init__)
+        monkeypatch.setattr(HDemucs2Stem, "forward", DummySeparator.forward)
 
     def test_outputs_created_and_non_empty(self, synthetic_stereo, tmp_path, monkeypatch):
         from scripts.separate import separate_file
