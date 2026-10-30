@@ -69,3 +69,73 @@ def test_separate_invalid_ndim_raises_value_error():
         separate(audio_3d, sr=44100)
 
 
+# --- HDemucs2Stem Tests (TDD Step 1 - will fail until models/separator.py implements the class) ---
+class TestHDemucs2Stem:
+    def test_instantiation_freeze_encoders(self):
+        """Instantiation with freeze_encoders=True freezes encoder/tencoder params, leaves decoders trainable."""
+        import torch
+        from models.separator import HDemucs2Stem
+
+        model = HDemucs2Stem(freeze_encoders=True)
+
+        # Check encoder/tencoder params are frozen
+        encoder_frozen = all(
+            not p.requires_grad
+            for n, p in model.named_parameters()
+            if "encoder" in n or "tencoder" in n
+        )
+        assert encoder_frozen, "Encoder/tencoder parameters should be frozen (requires_grad=False)"
+
+        # Check decoder params are trainable
+        decoder_trainable = all(
+            p.requires_grad
+            for n, p in model.named_parameters()
+            if "decoder" in n and not ("encoder" in n or "tencoder" in n)
+        )
+        assert decoder_trainable, "Decoder parameters should be trainable (requires_grad=True)"
+
+    def test_forward_shape_and_dtype(self):
+        """Forward pass with (B, 2, T) input returns (B, 2, 2, T) float32 tensor."""
+        import torch
+        from models.separator import HDemucs2Stem
+
+        model = HDemucs2Stem(freeze_encoders=True)
+        model.eval()
+
+        batch = 2
+        channels = 2
+        t = 44100
+        x = torch.randn(batch, channels, t, dtype=torch.float32)
+
+        with torch.no_grad():
+            out = model(x)
+
+        assert out.shape == (batch, 2, channels, t), f"Expected ({batch}, 2, {channels}, {t}), got {out.shape}"
+        assert out.dtype == torch.float32, f"Expected float32, got {out.dtype}"
+
+    def test_checkpoint_loading(self):
+        """Loading a checkpoint state dict via checkpoint_path works without error."""
+        import torch
+        from models.separator import HDemucs2Stem
+
+        model = HDemucs2Stem(freeze_encoders=True)
+
+        # Create a minimal dummy state dict matching backbone structure
+        # We'll use the model's own state dict as the "checkpoint"
+        dummy_state = model.state_dict()
+
+        # Save to a temporary file and load via checkpoint_path
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as f:
+            torch.save({'model_state_dict': dummy_state}, f.name)
+            checkpoint_path = f.name
+
+        # This should not raise
+        model2 = HDemucs2Stem(freeze_encoders=True, checkpoint_path=checkpoint_path)
+        assert isinstance(model2, HDemucs2Stem)
+
+        # Clean up
+        import os
+        os.unlink(checkpoint_path)
+
+
