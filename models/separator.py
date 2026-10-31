@@ -9,10 +9,20 @@ Design choices (all verified, no silent heuristics):
 """
 from __future__ import annotations
 from typing import Optional
+from pathlib import Path
 import numpy as np
 import torch
+import torch.nn as nn
 from demucs_infer.pretrained import get_model
 from demucs_infer.apply import apply_model
+
+# Try to import get_hdemucs from demucs_infer
+try:
+    from demucs_infer.pretrained import get_hdemucs
+except ImportError:
+    def get_hdemucs(name: str):
+        """Fallback: htdemucs is also available via get_model."""
+        return get_model(name)
 
 _model: Optional[torch.nn.Module] = None
 
@@ -128,3 +138,41 @@ class HDemucs2Stem(torch.nn.Module):
 
         # Stack to (B, 2, 2, T) — [vocals, accompaniment]
         return torch.cat([vocals, accompaniment], dim=1)
+
+
+
+class HDemucs4Stem(nn.Module):
+    """
+    4-Stem adapter routing HTDemucs [drums, bass, other, vocals]
+    directly to Carnatic instruments: [vocals, violin, mridangam, ghatam].
+    """
+    def __init__(self, model_name: str = "htdemucs", freeze_encoders: bool = True):
+        super().__init__()
+        self.sources = ["vocals", "violin", "mridangam", "ghatam"]
+        bag = get_hdemucs(model_name)
+        self.backbone = bag.models[0] if hasattr(bag, "models") else bag
+        self.audio_channels = getattr(self.backbone, "audio_channels", 2)
+        self.samplerate = getattr(self.backbone, "samplerate", 44100)
+
+        if freeze_encoders:
+            for name, param in self.backbone.named_parameters():
+                if "encoder" in name or "tencoder" in name:
+                    param.requires_grad = False
+                else:
+                    param.requires_grad = True
+
+    def forward(self, mix: torch.Tensor) -> torch.Tensor:
+        """
+        Args:
+            mix: (B, 2, T)
+        Returns:
+            stems: (B, 4, 2, T) in order [vocals, violin, mridangam, ghatam]
+        """
+        out_4stem = self.backbone(mix)  # (B, 4, 2, T) -> [drums, bass, other, vocals]
+        
+        vocals    = out_4stem[:, 3, :, :]  # index 3: vocals
+        violin    = out_4stem[:, 2, :, :]  # index 2: other
+        mridangam = out_4stem[:, 0, :, :]  # index 0: drums
+        ghatam    = out_4stem[:, 1, :, :]  # index 1: bass
+        
+        return torch.stack([vocals, violin, mridangam, ghatam], dim=1)

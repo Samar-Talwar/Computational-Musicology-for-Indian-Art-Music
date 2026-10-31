@@ -139,3 +139,75 @@ class TestHDemucs2Stem:
         os.unlink(checkpoint_path)
 
 
+# --- HDemucs4Stem Tests ---
+class TestHDemucs4Stem:
+    def test_instantiation_freeze_encoders(self):
+        """Instantiation with freeze_encoders=True freezes encoder/tencoder params, leaves decoders trainable."""
+        import torch
+        from models.separator import HDemucs4Stem
+
+        model = HDemucs4Stem(freeze_encoders=True)
+
+        # Check encoder/tencoder params are frozen
+        encoder_frozen = all(
+            not p.requires_grad
+            for n, p in model.named_parameters()
+            if "encoder" in n or "tencoder" in n
+        )
+        assert encoder_frozen, "Encoder/tencoder parameters should be frozen (requires_grad=False)"
+
+        # Check decoder params are trainable
+        decoder_trainable = all(
+            p.requires_grad
+            for n, p in model.named_parameters()
+            if "decoder" in n and not ("encoder" in n or "tencoder" in n)
+        )
+        assert decoder_trainable, "Decoder parameters should be trainable (requires_grad=True)"
+
+    def test_forward_shape_and_dtype(self):
+        """Forward pass with (B, 2, T) input returns (B, 4, 2, T) float32 tensor."""
+        import torch
+        from models.separator import HDemucs4Stem
+
+        model = HDemucs4Stem(freeze_encoders=True)
+        model.eval()
+
+        batch = 2
+        channels = 2
+        t = 44100
+        x = torch.randn(batch, channels, t, dtype=torch.float32)
+
+        with torch.no_grad():
+            out = model(x)
+
+        assert out.shape == (batch, 4, channels, t), f"Expected ({batch}, 4, {channels}, {t}), got {out.shape}"
+        assert out.dtype == torch.float32, f"Expected float32, got {out.dtype}"
+
+    def test_source_order(self):
+        """Output sources are ordered [vocals, violin, mridangam, ghatam]."""
+        import torch
+        from models.separator import HDemucs4Stem
+
+        model = HDemucs4Stem(freeze_encoders=True)
+        model.eval()
+
+        x = torch.randn(1, 2, 44100, dtype=torch.float32)
+        with torch.no_grad():
+            out = model(x)
+
+        # Shape check
+        assert out.shape == (1, 4, 2, 44100)
+        # Source names attribute
+        assert model.sources == ["vocals", "violin", "mridangam", "ghatam"]
+
+    def test_unfreeze_encoders(self):
+        """When freeze_encoders=False, all params are trainable."""
+        import torch
+        from models.separator import HDemucs4Stem
+
+        model = HDemucs4Stem(freeze_encoders=False)
+
+        all_trainable = all(p.requires_grad for p in model.parameters())
+        assert all_trainable, "All parameters should be trainable when freeze_encoders=False"
+
+
