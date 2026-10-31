@@ -13,7 +13,7 @@ from typing import Any
 import numpy as np
 import soundfile as sf
 
-from utils.sanidha import index_sanidha, split_sanidha, load_song, SongRecord
+from utils.sanidha import index_sanidha, split_sanidha, load_song, load_logical_stem, SongRecord
 from evaluation.metrics import collapse_to_two_stem
 
 
@@ -46,18 +46,24 @@ def stage_song(
 
     start_sec = 0.0
     while start_sec + chunk_duration_sec <= total_duration + 1e-6:
-        # Load 2-stem reference for window
-        _, stems = load_song(
-            record, include_tanpura=include_tanpura,
-            start_sec=start_sec, duration_sec=chunk_duration_sec,
-            target_sr=sr,
-        )
-        ref_2 = collapse_to_two_stem(stems, vocal_key="vocals")
+        # Load 4 primary stems
+        vocals = load_logical_stem(record, "vocals", start_sec=start_sec, duration_sec=chunk_duration_sec, target_sr=sr)
+        violin = load_logical_stem(record, "violin", start_sec=start_sec, duration_sec=chunk_duration_sec, target_sr=sr)
+        mridangam = load_logical_stem(record, "mridangam", start_sec=start_sec, duration_sec=chunk_duration_sec, target_sr=sr)
 
-        # Silence filter fix 2
+        has_ghatam_file = "ghatam" in record.stem_files
+        if has_ghatam_file:
+            ghatam = load_logical_stem(record, "ghatam", start_sec=start_sec, duration_sec=chunk_duration_sec, target_sr=sr)
+        else:
+            # Silent array matching first stem shape (2, N) float32
+            n_samples = vocals.shape[1]
+            ghatam = np.zeros((2, n_samples), dtype=np.float32)
+
+        # Energy filter across all 4 instruments (RMS <= 1e-12)
         silent = False
-        for k in ("vocals", "accompaniment"):
-            if _energy(ref_2[k]) <= 1e-12:
+        for stem in (vocals, violin, mridangam, ghatam):
+            energy = float(np.dot(stem.ravel(), stem.ravel()))
+            if energy <= 1e-12:
                 silent = True
                 break
         if silent:
@@ -70,15 +76,18 @@ def stage_song(
         chunk_dir = chunks_dir / chunk_id
         chunk_dir.mkdir(parents=True, exist_ok=True)
 
-        mix = ref_2["vocals"] + ref_2["accompaniment"]
-        mix = mix.astype(np.float32, copy=False)
+        # Mix = sum of 4 stems (channels-first)
+        mix = (vocals + violin + mridangam + ghatam).astype(np.float32, copy=False)
 
-        # Write with .T: load_song -> (C, N); soundfile expects (N, C)
+        # Write 5 audio files (channels-first -> soundfile expects (N, C))
         sf.write(chunk_dir / "mix.wav", mix.T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "vocals.wav", ref_2["vocals"].T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "accompaniment.wav", ref_2["accompaniment"].T, sr, subtype="PCM_16")
+        sf.write(chunk_dir / "vocals.wav", vocals.T, sr, subtype="PCM_16")
+        sf.write(chunk_dir / "violin.wav", violin.T, sr, subtype="PCM_16")
+        sf.write(chunk_dir / "mridangam.wav", mridangam.T, sr, subtype="PCM_16")
+        sf.write(chunk_dir / "ghatam.wav", ghatam.T, sr, subtype="PCM_16")
 
-        # Manifest paths relative POSIX from output_dir (fix 2)
+        has_ghatam = 1 if (has_ghatam_file and float(np.dot(ghatam.ravel(), ghatam.ravel())) > 1e-12) else 0
+
         chunks_base = Path("chunks")
         chunks_meta.append({
             "chunk_id": chunk_id,
@@ -88,7 +97,10 @@ def stage_song(
             "duration_sec": float(chunk_duration_sec),
             "mix_path": str(chunks_base / chunk_id / "mix.wav").replace("\\", "/"),
             "vocals_path": str(chunks_base / chunk_id / "vocals.wav").replace("\\", "/"),
-            "accompaniment_path": str(chunks_base / chunk_id / "accompaniment.wav").replace("\\", "/"),
+            "violin_path": str(chunks_base / chunk_id / "violin.wav").replace("\\", "/"),
+            "mridangam_path": str(chunks_base / chunk_id / "mridangam.wav").replace("\\", "/"),
+            "ghatam_path": str(chunks_base / chunk_id / "ghatam.wav").replace("\\", "/"),
+            "has_ghatam": has_ghatam,
         })
         start_sec += chunk_duration_sec
         window_idx += 1
@@ -99,13 +111,15 @@ def stage_song(
         writer = csv.writer(f)
         writer.writerow([
             "chunk_id", "concert_id", "song_id", "start_sec",
-            "duration_sec", "mix_path", "vocals_path", "accompaniment_path",
+            "duration_sec", "mix_path", "vocals_path", "violin_path",
+            "mridangam_path", "ghatam_path", "has_ghatam",
         ])
         for row in chunks_meta:
             writer.writerow([
                 row["chunk_id"], row["concert_id"], row["song_id"],
                 f"{row['start_sec']:.1f}", f"{row['duration_sec']:.1f}",
-                row["mix_path"], row["vocals_path"], row["accompaniment_path"],
+                row["mix_path"], row["vocals_path"], row["violin_path"],
+                row["mridangam_path"], row["ghatam_path"], row["has_ghatam"],
             ])
 
     # Console summary with skipped count
@@ -128,6 +142,10 @@ def stage_dataset(
     records = index_sanidha(dataset_root)
     train, _ = split_sanidha(records, train_concerts=train_concerts, val_concerts=(3,))
 
+    # Bar Concert 3 guard
+    if 3 in train_concerts:
+        raise ValueError("Concert 3 is the validation set and cannot be staged for training.")
+
     manifest_records: list[dict[str, Any]] = []
     total_chunks = 0
 
@@ -148,13 +166,15 @@ def stage_dataset(
         writer = csv.writer(f)
         writer.writerow([
             "chunk_id", "concert_id", "song_id", "start_sec",
-            "duration_sec", "mix_path", "vocals_path", "accompaniment_path",
+            "duration_sec", "mix_path", "vocals_path", "violin_path",
+            "mridangam_path", "ghatam_path", "has_ghatam",
         ])
         for row in manifest_records:
             writer.writerow([
                 row["chunk_id"], row["concert_id"], row["song_id"],
                 f"{row['start_sec']:.1f}", f"{row['duration_sec']:.1f}",
-                row["mix_path"], row["vocals_path"], row["accompaniment_path"],
+                row["mix_path"], row["vocals_path"], row["violin_path"],
+                row["mridangam_path"], row["ghatam_path"], row["has_ghatam"],
             ])
 
     return output_dir
