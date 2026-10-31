@@ -22,6 +22,20 @@ def synthetic_colab_record(tmp_path):
     sf.write(clean / "violin-1.wav", violin.T, sr, subtype="PCM_16")
     sf.write(clean / "violin-2.wav", violin.T, sr, subtype="PCM_16")
     sf.write(clean / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
+    sf.write(clean / "mridangam-left.wav", (0.2 * np.ones((2, n), dtype=np.float32)).T, sr, subtype="PCM_16")
+    sf.write(clean / "mridangam-right.wav", (0.2 * np.ones((2, n), dtype=np.float32)).T, sr, subtype="PCM_16")
+    from utils.sanidha import SongRecord
+    return SongRecord(
+        concert_id=1, song_id="01-SongA", folder=clean,
+        stem_files={
+            "vocals": (clean / "vocals.wav",),
+            "violin": (clean / "violin-1.wav", clean / "violin-2.wav"),
+            "mridangam": (clean / "mridangam-left.wav", clean / "mridangam-right.wav"),
+            "tanpura": (clean / "tanpura.wav",),
+        },
+    )
+
+
 @pytest.fixture
 def synthetic_colab_record_4stem(tmp_path):
     """Synthetic record with 4 stems including ghatam (float32 fixtures per CLAUDE.md TDD)."""
@@ -121,15 +135,20 @@ class TestStageColab:
         sf.write(clean1 / "violin-1.wav", vi1.T, sr, subtype="PCM_16")
         sf.write(clean1 / "violin-2.wav", vi1.T, sr, subtype="PCM_16")
         sf.write(clean1 / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
+        sf.write(clean1 / "mridangam-left.wav", (0.2 * np.ones((2, n), dtype=np.float32)).T, sr, subtype="PCM_16")
+        sf.write(clean1 / "mridangam-right.wav", (0.2 * np.ones((2, n), dtype=np.float32)).T, sr, subtype="PCM_16")
 
         # Song 2 in Concert02
         clean2 = tmp_path / "Concert02" / "02-SongB" / "Audio-Multitracks-Clean"
         clean2.mkdir(parents=True)
         v2 = np.random.default_rng(3).standard_normal((2, n), dtype=np.float32) * 0.5
         vi2 = np.random.default_rng(4).standard_normal((2, n), dtype=np.float32) * 0.3
+        mr2 = np.ones((2, n), dtype=np.float32) * 0.2
         sf.write(clean2 / "vocals.wav", v2.T, sr, subtype="PCM_16")
         sf.write(clean2 / "violin-1.wav", vi2.T, sr, subtype="PCM_16")
         sf.write(clean2 / "violin-2.wav", vi2.T, sr, subtype="PCM_16")
+        sf.write(clean2 / "mridangam-left.wav", mr2.T, sr, subtype="PCM_16")
+        sf.write(clean2 / "mridangam-right.wav", mr2.T, sr, subtype="PCM_16")
         sf.write(clean2 / "tanpura.wav", np.zeros((2, n), dtype=np.float32).T, sr, subtype="PCM_16")
 
         # Stage both
@@ -170,9 +189,10 @@ class TestStageColab4Stem:
         n = sr * 10
         clean = tmp_path / "Concert01" / "01-SongNoGhatam" / "Audio-Multitracks-Clean"
         clean.mkdir(parents=True)
-        vocals = np.random.default_rng(50).standard_normal((2, n), dtype=np.float32) * 2.0
-        violin = np.random.default_rng(51).standard_normal((2, n), dtype=np.float32) * 2.0
-        mridangam = np.random.default_rng(52).standard_normal((2, n), dtype=np.float32) * 2.0
+        vocals = (0.5 * np.ones((2, n), dtype=np.float32))
+        violin = (0.3 * np.ones((2, n), dtype=np.float32))
+        mridangam = (0.2 * np.ones((2, n), dtype=np.float32))
+        ghatam_silent = np.zeros((2, n), dtype=np.float32)  # explicit silence per spec
         sf.write(clean / "vocals.wav", vocals.T, sr, subtype="PCM_16")
         sf.write(clean / "violin-1.wav", violin.T, sr, subtype="PCM_16")
         sf.write(clean / "violin-2.wav", violin.T, sr, subtype="PCM_16")
@@ -186,6 +206,8 @@ class TestStageColab4Stem:
                 "mridangam": (clean / "mridangam-1.wav",),
             },
         )
+        # Silent fixture: exact zeros => RMS 0.0 <= 1e-12 (skip expected if all silent)
+        # Here other stems are audible, only ghatam missing => ghatam silent file written
         chunks = stage_song(rec, tmp_path / "out_no_g", chunk_duration_sec=6.0)
         assert len(chunks) == 1
         chunk_dir = tmp_path / "out_no_g" / "chunks" / chunks[0]["chunk_id"]

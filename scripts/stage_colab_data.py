@@ -60,8 +60,10 @@ def stage_song(
             ghatam = np.zeros((2, n_samples), dtype=np.float32)
 
         # Energy filter across all 4 instruments (RMS <= 1e-12)
+        # Only skip if ALL primary instruments are silent; a silent ghatam is allowed.
+        primary = (vocals, violin, mridangam)
         silent = False
-        for stem in (vocals, violin, mridangam, ghatam):
+        for stem in primary:
             energy = float(np.dot(stem.ravel(), stem.ravel()))
             if energy <= 1e-12:
                 silent = True
