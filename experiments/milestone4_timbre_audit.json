@@ -1,0 +1,151 @@
+{
+  "milestone": "Milestone 4 - Downstream Timbre Bleed Audit",
+  "classifier_val_accuracy": 89.5,
+  "classes": [
+    "bass",
+    "drums",
+    "flute",
+    "guitar",
+    "piano",
+    "sarod",
+    "sitar",
+    "tabla",
+    "veena",
+    "violin"
+  ],
+  "evaluations": [
+    {
+      "stem_name": "Original Polyphonic Mix",
+      "top_class": "veena",
+      "top_probability": 0.5658043026924133,
+      "tabla_bleed_pct": 8.176973342895508,
+      "string_bleed_pct": 80.29589080810547,
+      "full_distribution": {
+        "bass": 0.00037658424116671085,
+        "drums": 0.002709482330828905,
+        "flute": 4.210462066112086e-05,
+        "guitar": 0.043205928057432175,
+        "piano": 6.968835805309936e-05,
+        "sarod": 0.06454312801361084,
+        "sitar": 0.23715460300445557,
+        "tabla": 0.08176973462104797,
+        "veena": 0.5658043026924133,
+        "violin": 0.004324470646679401
+      }
+    },
+    {
+      "stem_name": "Ground-Truth Vocals",
+      "top_class": "violin",
+      "top_probability": 0.47671863436698914,
+      "tabla_bleed_pct": 0.0018626562086865306,
+      "string_bleed_pct": 44.20265579223633,
+      "full_distribution": {
+        "bass": 7.550138434453402e-06,
+        "drums": 5.113195220474154e-05,
+        "flute": 0.0007314196554943919,
+        "guitar": 0.02119693160057068,
+        "piano": 1.9781240553129464e-05,
+        "sarod": 0.059229373931884766,
+        "sitar": 0.4395015239715576,
+        "tabla": 1.8626562450663187e-05,
+        "veena": 0.0025250285398215055,
+        "violin": 0.47671863436698914
+      }
+    },
+    {
+      "stem_name": "Ground-Truth Accomp",
+      "top_class": "veena",
+      "top_probability": 0.3773813545703888,
+      "tabla_bleed_pct": 8.412941932678223,
+      "string_bleed_pct": 51.96486282348633,
+      "full_distribution": {
+        "bass": 0.0009441194124519825,
+        "drums": 0.0026819808408617973,
+        "flute": 0.0005584226455539465,
+        "guitar": 0.14305534958839417,
+        "piano": 0.0002946377790067345,
+        "sarod": 0.23736275732517242,
+        "sitar": 0.14226727187633514,
+        "tabla": 0.08412942290306091,
+        "veena": 0.3773813545703888,
+        "violin": 0.011324712075293064
+      }
+    },
+    {
+      "stem_name": "Baseline Vocals",
+      "top_class": "sitar",
+      "top_probability": 0.668159544467926,
+      "tabla_bleed_pct": 0.01580134965479374,
+      "string_bleed_pct": 69.02877044677734,
+      "full_distribution": {
+        "bass": 3.0780200177105144e-05,
+        "drums": 0.00022720106062479317,
+        "flute": 0.0006862346781417727,
+        "guitar": 0.011541623622179031,
+        "piano": 5.45653747394681e-05,
+        "sarod": 0.08216781169176102,
+        "sitar": 0.668159544467926,
+        "tabla": 0.00015801349945832044,
+        "veena": 0.02212817594408989,
+        "violin": 0.21484601497650146
+      }
+    },
+    {
+      "stem_name": "Baseline Accomp",
+      "top_class": "guitar",
+      "top_probability": 0.3883240818977356,
+      "tabla_bleed_pct": 35.703529357910156,
+      "string_bleed_pct": 15.42509937286377,
+      "full_distribution": {
+        "bass": 0.03932580351829529,
+        "drums": 0.02870902419090271,
+        "flute": 0.0005159120773896575,
+        "guitar": 0.3883240818977356,
+        "piano": 0.0006837124237790704,
+        "sarod": 0.028590857982635498,
+        "sitar": 0.030606722459197044,
+        "tabla": 0.3570353090763092,
+        "veena": 0.12364427745342255,
+        "violin": 0.0025642774999141693
+      }
+    },
+    {
+      "stem_name": "Fine-Tuned Vocals",
+      "top_class": "sitar",
+      "top_probability": 0.7172555327415466,
+      "tabla_bleed_pct": 0.015450429171323776,
+      "string_bleed_pct": 72.63306427001953,
+      "full_distribution": {
+        "bass": 1.223566596308956e-05,
+        "drums": 8.475322101730853e-05,
+        "flute": 0.00023113467614166439,
+        "guitar": 0.02865242399275303,
+        "piano": 2.5120350983343087e-05,
+        "sarod": 0.09610217064619064,
+        "sitar": 0.7172555327415466,
+        "tabla": 0.00015450429054908454,
+        "veena": 0.00907511729747057,
+        "violin": 0.14840708673000336
+      }
+    },
+    {
+      "stem_name": "Fine-Tuned Accomp",
+      "top_class": "veena",
+      "top_probability": 0.5886273384094238,
+      "tabla_bleed_pct": 5.639404773712158,
+      "string_bleed_pct": 76.14585876464844,
+      "full_distribution": {
+        "bass": 0.0013727660989388824,
+        "drums": 0.00533030042424798,
+        "flute": 0.00036110993823967874,
+        "guitar": 0.04938789829611778,
+        "piano": 0.00033793109469115734,
+        "sarod": 0.11901567876338959,
+        "sitar": 0.1728312373161316,
+        "tabla": 0.056394048035144806,
+        "veena": 0.5886273384094238,
+        "violin": 0.006341725122183561
+      }
+    }
+  ]
+}
