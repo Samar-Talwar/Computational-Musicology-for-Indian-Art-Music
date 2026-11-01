@@ -1,48 +1,57 @@
-# Computational Musicology for Indian Art Music
+# Computational Musicology — Indian Art Music
 
-**Acoustic Sound Isolation Pipeline optimized for Indian Classical Instrumentation**
+> [!NOTE]
+> Locked benchmark (~7.87 dB SDR, 2-stem Sanidha paper, fine-tuned Spleeter). 4-stem NOT directly comparable (CLAUDE.md line 28).
 
-Course project benchmarking a source-separation pipeline against the published
-Spleeter/Sanidha baseline (arXiv:2501.06959, ISMIR 2024, Georgia Tech).
+---
 
-## Project Overview
+## Milestones (Verified)
+| # | Status | Contract |
+|---|---|---|
+| 1 | Done | float32 fixtures (CLAUDE.md 47) |
+| 2 | Done | HDemucs freeze; checkpoint |
+| 3 | Done | np.ascontiguousarray; PCM_16 |
+| 4 | Done | TimbreCNN 10 classes; 40 MFCC × 87 |
 
-Standard Western-trained audio source separation models fail on Indian classical
-music — they misclassify tonal percussion (tabla, mridangam) as generic drums and
-cannot separate overlapping microtonal glides from instruments like sitar, veena,
-and sarod. This project builds and evaluates a separation + classification pipeline
-specifically adapted for this domain.
+---
 
-## Pipeline Stages
+## Pipeline (Mermaid)
+```mermaid
+flowchart TD
+    A[Raw Audio .wav / librosa.load float32] --> B[STFT 2048/512/22050] --> C[HPSS median31] --> D[Profiles] --> E[HDemucs2/4Stem freeze] --> F[4 Stems vocals/violin/mridangam/ghatam] --> G[2-Stem Collapse sum-non-vocal] --> H[Evaluate SDR/SIR/SAR/SI-SDR]
+    F --> I[TimbreCNN 40 MFCC/87] --> J[Classify 10]
+```
 
-1. **Spectrogram Profiling & HPSS Baseline** — DSP preprocessing, harmonic-percussive
-   source separation as a classical baseline
-2. **Neural Model Fine-Tuning** — domain adaptation of a separation network on the
-   Sanidha dataset
-3. **Waveform Resynthesis** — ISTFT/vocoder reconstruction from predicted masks
-4. **Instrument Classification** — MFCC-based CNN classifier validating separation quality
+---
 
-## Datasets
+## Benchmark (Verified — Concert 03)
+> [!WARNING] 4-stem NOT comparable to ~7.87 directly. Only 2-stem collapsed compares.
 
-- **Sanidha** — studio-quality Carnatic multi-track dataset (zero-bleed)
-- **Saraga Multitrack Dataset** — real-world concert recordings (via `mirdata`)
-- **IMIDataset** — used for the downstream classifier stage only
+```
+Sanidha ~7.87  ████████████████████████████
+Our 2-stem 9.78  ██████████████████████████████████ (+1.91)
+Our 4-stem 3.17  ██████████ (NOT vs 7.87)
+Vocals 10.70  Violin 6.31  Mridangam 1.75  Ghatam -6.08
+```
 
-## Repository Structure
+| Metric | Value | Caveat |
+|---|---|---|
+| Baseline | 7.87 dB | 2-stem only |
+| 2-stem collapsed | 9.78 dB | +1.91 vs paper |
+| 4-stem mean | 3.17 dB | Not comparable to 7.87 |
 
-\`\`\`
-data/raw/          # Original datasets (gitignored — not committed)
-data/processed/    # Generated spectrograms/features (gitignored)
-preprocessing/     # STFT, HPSS, normalization scripts
-models/            # Neural network architecture + training code
-notebooks/         # Exploration/visualization notebooks
-experiments/       # Experiment configs and logs
-evaluation/        # SDR/SI-SDR/SIR/SAR metrics, classifier evaluation
-utils/             # Shared helper functions
-docs/              # Research notes, architecture decisions, literature review
-\`\`\`
+---
 
-## Setup
+## Dataset (Verified — No Silent Decisions)
+> [!CAUTION] Concert 3 guard (ValueError); artist-overlap audit UNVERIFIED per CLAUDE.md.
 
-_(to be filled in once environment/dependencies are finalized)_
+---
 
+## Reproducibility Contracts
+- float32 `astype(np.float32)` — CLAUDE.md 47; never float64 default
+- PCM_16 write; `np.ascontiguousarray`; `np.zeros(..., order="C")`; primary-only RMS filter
+
+---
+
+*Co-Authored-By: Claude Code <noreply@anthropic.com>*  
+*🤖 Generated with [Claude Code](https://claude.com/claude-code)*
