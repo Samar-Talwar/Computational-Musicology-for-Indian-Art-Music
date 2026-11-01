@@ -25,12 +25,12 @@ class TestSeparateFile:
         sf.write(p, audio.T, sr, subtype="PCM_16")
         return p, audio, sr
 
-    def _fake_model(self, monkeypatch):
+    def _fake_model_2stem(self, monkeypatch):
         from models.separator import HDemucs2Stem
         import torch.nn as nn
         import torch
 
-        class DummySeparator(nn.Module):
+        class DummySeparator2Stem(nn.Module):
             def __init__(self, freeze_encoders=True, checkpoint_path=None):
                 torch.nn.Module.__init__(self)
                 self.audio_channels = 2
@@ -41,26 +41,58 @@ class TestSeparateFile:
                 # mix: (B, 2, T) -> (B, 2, 2, T) [vocals, accompaniment], each (2, T)
                 return torch.stack([mix, mix * 0.5], dim=1)
 
-        monkeypatch.setattr(HDemucs2Stem, "__init__", DummySeparator.__init__)
-        monkeypatch.setattr(HDemucs2Stem, "forward", DummySeparator.forward)
+        monkeypatch.setattr(HDemucs2Stem, "__init__", DummySeparator2Stem.__init__)
+        monkeypatch.setattr(HDemucs2Stem, "forward", DummySeparator2Stem.forward)
 
-    def test_outputs_created_and_non_empty(self, synthetic_stereo, tmp_path, monkeypatch):
+    def _fake_model_4stem(self, monkeypatch):
+        from models.separator import HDemucs4Stem
+        import torch.nn as nn
+        import torch
+
+        class DummySeparator4Stem(nn.Module):
+            def __init__(self, model_name="htdemucs", freeze_encoders=True, checkpoint_path=None):
+                torch.nn.Module.__init__(self)
+                self.audio_channels = 2
+                self.samplerate = 44100
+                self.sources = ["vocals", "violin", "mridangam", "ghatam"]
+
+            def forward(self, mix: torch.Tensor) -> torch.Tensor:
+                # mix: (B, 2, T) -> (B, 4, 2, T) [vocals, violin, mridangam, ghatam], each (2, T)
+                B, C, T = mix.shape
+                out = torch.stack([mix, mix * 0.5, mix * 0.3, mix * 0.1], dim=1)
+                return out  # (B, 4, 2, T)
+
+        monkeypatch.setattr(HDemucs4Stem, "__init__", DummySeparator4Stem.__init__)
+        monkeypatch.setattr(HDemucs4Stem, "forward", DummySeparator4Stem.forward)
+
+    def test_outputs_created_and_non_empty_2stem(self, synthetic_stereo, tmp_path, monkeypatch):
         from scripts.separate import separate_file
-        self._fake_model(monkeypatch)
+        self._fake_model_2stem(monkeypatch)
         p, _, sr = synthetic_stereo
         out_dir = tmp_path / "stems"
-        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu")
+        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu", num_stems=2)
         assert isinstance(result, dict)
         assert set(result.keys()) == {"vocals", "accompaniment"}
         assert result["vocals"].exists() and result["vocals"].stat().st_size > 0
         assert result["accompaniment"].exists() and result["accompaniment"].stat().st_size > 0
 
-    def test_output_shape_sr_dtype(self, synthetic_stereo, tmp_path, monkeypatch):
+    def test_outputs_created_and_non_empty_4stem(self, synthetic_stereo, tmp_path, monkeypatch):
         from scripts.separate import separate_file
-        self._fake_model(monkeypatch)
+        self._fake_model_4stem(monkeypatch)
+        p, _, sr = synthetic_stereo
+        out_dir = tmp_path / "stems"
+        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu", num_stems=4)
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"vocals", "violin", "mridangam", "ghatam"}
+        for name in ["vocals", "violin", "mridangam", "ghatam"]:
+            assert result[name].exists() and result[name].stat().st_size > 0
+
+    def test_output_shape_sr_dtype_2stem(self, synthetic_stereo, tmp_path, monkeypatch):
+        from scripts.separate import separate_file
+        self._fake_model_2stem(monkeypatch)
         p, audio, sr = synthetic_stereo
         out_dir = tmp_path / "stems"
-        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu")
+        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu", num_stems=2)
         import soundfile as sf
         for name in ("vocals", "accompaniment"):
             data, out_sr = sf.read(result[name], dtype="float32", always_2d=True)
@@ -70,9 +102,24 @@ class TestSeparateFile:
             assert data.shape == audio.shape, f"{name} shape {data.shape} != {audio.shape}"
             assert data.shape[0] == 2  # stereo
 
+    def test_output_shape_sr_dtype_4stem(self, synthetic_stereo, tmp_path, monkeypatch):
+        from scripts.separate import separate_file
+        self._fake_model_4stem(monkeypatch)
+        p, audio, sr = synthetic_stereo
+        out_dir = tmp_path / "stems"
+        result = separate_file(p, out_dir, checkpoint_path=None, device="cpu", num_stems=4)
+        import soundfile as sf
+        for name in ("vocals", "violin", "mridangam", "ghatam"):
+            data, out_sr = sf.read(result[name], dtype="float32", always_2d=True)
+            data = data.T  # (C, N)
+            assert data.dtype == np.float32
+            assert out_sr == sr == 44100
+            assert data.shape == audio.shape, f"{name} shape {data.shape} != {audio.shape}"
+            assert data.shape[0] == 2  # stereo
+
     def test_mono_duplicated_to_stereo(self, tmp_path, monkeypatch):
         from scripts.separate import separate_file
-        self._fake_model(monkeypatch)
+        self._fake_model_2stem(monkeypatch)
         sr = 44100
         t = np.linspace(0, 1.0, sr, endpoint=False, dtype=np.float32)
         mono = np.sin(2 * np.pi * 440 * t).astype(np.float32)
@@ -86,13 +133,13 @@ class TestSeparateFile:
 
     def test_invalid_path_raises_filenotfound(self, tmp_path, monkeypatch):
         from scripts.separate import separate_file
-        self._fake_model(monkeypatch)
+        self._fake_model_2stem(monkeypatch)
         with pytest.raises(FileNotFoundError):
             separate_file(tmp_path / "no_such.wav", tmp_path / "out")
 
     def test_bad_sr_raises(self, tmp_path, monkeypatch):
         from scripts.separate import separate_file
-        self._fake_model(monkeypatch)
+        self._fake_model_2stem(monkeypatch)
         sr = 22050
         t = np.linspace(0, 1.0, sr, endpoint=False, dtype=np.float32)
         audio = np.stack([np.sin(2 * np.pi * 440 * t).astype(np.float32)] * 2, axis=0)
@@ -101,6 +148,13 @@ class TestSeparateFile:
         sf.write(p, audio.T, sr, subtype="PCM_16")
         with pytest.raises(ValueError, match="44100"):
             separate_file(p, tmp_path / "out")
+
+    def test_invalid_num_stems_raises(self, synthetic_stereo, tmp_path, monkeypatch):
+        from scripts.separate import separate_file
+        self._fake_model_2stem(monkeypatch)
+        p, _, sr = synthetic_stereo
+        with pytest.raises(ValueError, match="num_stems must be 2 or 4"):
+            separate_file(p, tmp_path / "out", num_stems=3)
 
 
 class TestSeparateCLI:
@@ -124,3 +178,14 @@ class TestSeparateCLI:
         parser.add_argument("--output-dir", "-o", default="stems")
         args = parser.parse_args(["-i", "x.wav"])
         assert args.output_dir == "stems"
+
+    def test_cli_num_stems_choices(self, monkeypatch):
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--input", "-i", required=True)
+        parser.add_argument("--output-dir", "-o", default="stems")
+        parser.add_argument("--num-stems", "-n", type=int, choices=[2, 4], default=2)
+        args = parser.parse_args(["-i", "x.wav", "-n", "4"])
+        assert args.num_stems == 4
+        args2 = parser.parse_args(["-i", "x.wav"])
+        assert args2.num_stems == 2

@@ -55,9 +55,9 @@ def stage_song(
         if has_ghatam_file:
             ghatam = load_logical_stem(record, "ghatam", start_sec=start_sec, duration_sec=chunk_duration_sec, target_sr=sr)
         else:
-            # Silent array matching first stem shape (2, N) float32
+            # Silent array matching first stem shape (2, N) float32 - ensure C-contiguous
             n_samples = vocals.shape[1]
-            ghatam = np.zeros((2, n_samples), dtype=np.float32)
+            ghatam = np.zeros((2, n_samples), dtype=np.float32, order="C")
 
         # Energy filter across all 4 instruments (RMS <= 1e-12)
         # Only skip if ALL primary instruments are silent; a silent ghatam is allowed.
@@ -82,11 +82,12 @@ def stage_song(
         mix = (vocals + violin + mridangam + ghatam).astype(np.float32, copy=False)
 
         # Write 5 audio files (channels-first -> soundfile expects (N, C))
-        sf.write(chunk_dir / "mix.wav", mix.T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "vocals.wav", vocals.T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "violin.wav", violin.T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "mridangam.wav", mridangam.T, sr, subtype="PCM_16")
-        sf.write(chunk_dir / "ghatam.wav", ghatam.T, sr, subtype="PCM_16")
+        # Use ascontiguousarray to ensure C-contiguous memory layout for soundfile
+        sf.write(chunk_dir / "mix.wav", np.ascontiguousarray(mix.T), sr, subtype="PCM_16")
+        sf.write(chunk_dir / "vocals.wav", np.ascontiguousarray(vocals.T), sr, subtype="PCM_16")
+        sf.write(chunk_dir / "violin.wav", np.ascontiguousarray(violin.T), sr, subtype="PCM_16")
+        sf.write(chunk_dir / "mridangam.wav", np.ascontiguousarray(mridangam.T), sr, subtype="PCM_16")
+        sf.write(chunk_dir / "ghatam.wav", np.ascontiguousarray(ghatam.T), sr, subtype="PCM_16")
 
         has_ghatam = 1 if (has_ghatam_file and float(np.dot(ghatam.ravel(), ghatam.ravel())) > 1e-12) else 0
 

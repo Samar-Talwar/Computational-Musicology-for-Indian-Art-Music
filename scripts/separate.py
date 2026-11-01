@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from models.separator import HDemucs2Stem
+from models.separator import HDemucs2Stem, HDemucs4Stem
 
 TARGET_SR = 44100
 
@@ -53,7 +53,10 @@ def separate_file(
     checkpoint_path: str | Path | None = None,
     device: str = "cpu",
     chunk_duration_sec: float | None = None,
+    num_stems: int = 2,
 ) -> dict[str, Path]:
+    if num_stems not in (2, 4):
+        raise ValueError(f"num_stems must be 2 or 4, got {num_stems}")
     input_path = Path(input_path)
     output_dir = Path(output_dir)
     if not input_path.exists():
@@ -72,13 +75,19 @@ def separate_file(
 
     torch_dev = torch.device(device)
     # freeze_encoders=False explicit for inference (backbone loaded; no freeze needed)
-    model = HDemucs2Stem(freeze_encoders=False, checkpoint_path=checkpoint_path)
+    if num_stems == 4:
+        model = HDemucs4Stem(freeze_encoders=False, checkpoint_path=checkpoint_path)
+    else:
+        model = HDemucs2Stem(freeze_encoders=False, checkpoint_path=checkpoint_path)
     model.to(torch_dev).eval()
 
     n_samples = audio.shape[1]
     if chunk_duration_sec is not None and chunk_duration_sec > 0:
         chunk_samples = int(chunk_duration_sec * TARGET_SR)
-        vocals_chunks, acc_chunks = [], []
+        if num_stems == 4:
+            stem_chunks = {name: [] for name in ["vocals", "violin", "mridangam", "ghatam"]}
+        else:
+            vocals_chunks, acc_chunks = [], []
         for start in range(0, n_samples, chunk_samples):
             end = min(start + chunk_samples, n_samples)
             chunk = audio[:, start:end]
@@ -86,29 +95,48 @@ def separate_file(
                 chunk = np.pad(chunk, ((0, 0), (0, chunk_samples - chunk.shape[1])), mode="constant")
             mix = torch.from_numpy(chunk).unsqueeze(0).to(torch_dev)
             with torch.no_grad():
-                out = model(mix)  # (B, 2, 2, T)
+                out = model(mix)
             actual_len = end - start
-            vocals_chunks.append(out[0, 0, :, :actual_len].cpu().numpy())
-            acc_chunks.append(out[0, 1, :, :actual_len].cpu().numpy())
-        # Non-overlapping chunking — boundary artifacts possible (documented)
-        vocals = np.concatenate(vocals_chunks, axis=1)
-        accompaniment = np.concatenate(acc_chunks, axis=1)
+            if num_stems == 4:
+                # out: (B, 4, 2, T) -> [vocals, violin, mridangam, ghatam]
+                for i, name in enumerate(["vocals", "violin", "mridangam", "ghatam"]):
+                    stem_chunks[name].append(out[0, i, :, :actual_len].cpu().numpy())
+            else:
+                vocals_chunks.append(out[0, 0, :, :actual_len].cpu().numpy())
+                acc_chunks.append(out[0, 1, :, :actual_len].cpu().numpy())
+        if num_stems == 4:
+            stems = {name: np.concatenate(chunks, axis=1) for name, chunks in stem_chunks.items()}
+        else:
+            vocals = np.concatenate(vocals_chunks, axis=1)
+            accompaniment = np.concatenate(acc_chunks, axis=1)
     else:
         mix = torch.from_numpy(audio).unsqueeze(0).to(torch_dev)
         with torch.no_grad():
-            out = model(mix)  # (B, 2, 2, T)
-        vocals = out[0, 0, :, :].cpu().numpy()       # (2, T) — non-zero by model
-        accompaniment = out[0, 1, :, :].cpu().numpy()  # (2, T)
+            out = model(mix)
+        if num_stems == 4:
+            # out: (B, 4, 2, T) -> [vocals, violin, mridangam, ghatam]
+            stems = {name: out[0, i, :, :].cpu().numpy() for i, name in enumerate(["vocals", "violin", "mridangam", "ghatam"])}
+        else:
+            vocals = out[0, 0, :, :].cpu().numpy()       # (2, T) — non-zero by model
+            accompaniment = out[0, 1, :, :].cpu().numpy()  # (2, T)
 
-    vocals_path = output_dir / "vocals.wav"
-    accompaniment_path = output_dir / "accompaniment.wav"
-    sf.write(vocals_path, vocals.T, TARGET_SR, subtype="PCM_16")
-    sf.write(accompaniment_path, accompaniment.T, TARGET_SR, subtype="PCM_16")
-    return {"vocals": vocals_path, "accompaniment": accompaniment_path}
+    if num_stems == 4:
+        result = {}
+        for name in ["vocals", "violin", "mridangam", "ghatam"]:
+            stem_path = output_dir / f"{name}.wav"
+            sf.write(stem_path, np.ascontiguousarray(stems[name].T), TARGET_SR, subtype="PCM_16")
+            result[name] = stem_path
+    else:
+        vocals_path = output_dir / "vocals.wav"
+        accompaniment_path = output_dir / "accompaniment.wav"
+        sf.write(vocals_path, np.ascontiguousarray(vocals.T), TARGET_SR, subtype="PCM_16")
+        sf.write(accompaniment_path, np.ascontiguousarray(accompaniment.T), TARGET_SR, subtype="PCM_16")
+        result = {"vocals": vocals_path, "accompaniment": accompaniment_path}
+    return result
 
 
 def main():
-    parser = argparse.ArgumentParser(description="2-stem separation using HDemucs2Stem")
+    parser = argparse.ArgumentParser(description="Separation using HDemucs (2 or 4 stems)")
     parser.add_argument("--input", "-i", type=str, required=True,
                         help="Input .wav mix (mono/stereo)")
     parser.add_argument("--output-dir", "-o", type=str, default="stems",
@@ -118,16 +146,19 @@ def main():
     parser.add_argument("--device", type=str, choices=["cpu", "cuda"], default="cpu")
     parser.add_argument("--chunk-duration", type=float, default=None,
                         help="Chunk duration (sec) for long audio; non-overlapping — boundary artifacts possible")
+    parser.add_argument("--num-stems", "-n", type=int, choices=[2, 4], default=2,
+                        help="Number of stems: 2 (vocals/accompaniment) or 4 (vocals/violin/mridangam/ghatam)")
     args = parser.parse_args()
     try:
         result = separate_file(
             args.input, args.output_dir,
             checkpoint_path=args.checkpoint, device=args.device,
             chunk_duration_sec=args.chunk_duration,
+            num_stems=args.num_stems,
         )
         print("Separation complete:")
-        print(f"  Vocals:        {result['vocals']}")
-        print(f"  Accompaniment: {result['accompaniment']}")
+        for k, v in result.items():
+            print(f"  {k.capitalize()}: {v}")
     except (FileNotFoundError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

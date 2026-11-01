@@ -1,0 +1,176 @@
+{
+  "milestone": "Milestone 4 - 4-Stem Bleed Audit",
+  "evaluations": [
+    {
+      "stem_name": "Polyphonic Mixture",
+      "top_class": "violin",
+      "top_probability": 0.8366996049880981,
+      "percussion_energy_pct": 0.10084814578294754,
+      "melodic_energy_pct": 83.97816467285156,
+      "full_distribution": {
+        "bass": 0.0002796229091472924,
+        "drums": 0.00018041350995190442,
+        "flute": 0.04060162976384163,
+        "guitar": 0.08878643065690994,
+        "piano": 0.0009028335334733129,
+        "sarod": 0.02863934077322483,
+        "sitar": 0.00133750110398978,
+        "tabla": 0.0008280679467134178,
+        "veena": 0.0017445044359192252,
+        "violin": 0.8366996049880981
+      }
+    },
+    {
+      "stem_name": "Ref: Vocals",
+      "top_class": "violin",
+      "top_probability": 0.5990925431251526,
+      "percussion_energy_pct": 0.0887821689248085,
+      "melodic_energy_pct": 60.00994873046875,
+      "full_distribution": {
+        "bass": 0.0015902796294540167,
+        "drums": 0.0006156869931146502,
+        "flute": 0.06820512562990189,
+        "guitar": 0.32503199577331543,
+        "piano": 0.0005680021131411195,
+        "sarod": 0.003617354901507497,
+        "sitar": 0.0006442555459216237,
+        "tabla": 0.00027213472640141845,
+        "veena": 0.0003627035766839981,
+        "violin": 0.5990925431251526
+      }
+    },
+    {
+      "stem_name": "Ref: Violin",
+      "top_class": "violin",
+      "top_probability": 0.8231028914451599,
+      "percussion_energy_pct": 0.01472244318574667,
+      "melodic_energy_pct": 82.38439178466797,
+      "full_distribution": {
+        "bass": 5.0178357923869044e-05,
+        "drums": 4.8408855946036056e-05,
+        "flute": 0.13064619898796082,
+        "guitar": 0.036247968673706055,
+        "piano": 0.0012923390604555607,
+        "sarod": 0.007772314362227917,
+        "sitar": 0.0004900427302345634,
+        "tabla": 9.881558071356267e-05,
+        "veena": 0.00025091884890571237,
+        "violin": 0.8231028914451599
+      }
+    },
+    {
+      "stem_name": "Ref: Mridangam",
+      "top_class": "drums",
+      "top_probability": 0.43378931283950806,
+      "percussion_energy_pct": 46.3488883972168,
+      "melodic_energy_pct": 27.39623260498047,
+      "full_distribution": {
+        "bass": 0.046675097197294235,
+        "drums": 0.43378931283950806,
+        "flute": 0.038342900574207306,
+        "guitar": 0.15245109796524048,
+        "piano": 0.0018993024714291096,
+        "sarod": 0.023180441930890083,
+        "sitar": 0.059276849031448364,
+        "tabla": 0.029699567705392838,
+        "veena": 0.009470000863075256,
+        "violin": 0.2052154690027237
+      }
+    },
+    {
+      "stem_name": "Ref: Ghatam",
+      "top_class": "drums",
+      "top_probability": 0.5128821134567261,
+      "percussion_energy_pct": 51.95854187011719,
+      "melodic_energy_pct": 21.717592239379883,
+      "full_distribution": {
+        "bass": 0.01752309501171112,
+        "drums": 0.5128821134567261,
+        "flute": 0.1919339895248413,
+        "guitar": 0.04212721809744835,
+        "piano": 0.0014562990982085466,
+        "sarod": 0.010198049247264862,
+        "sitar": 0.022639164701104164,
+        "tabla": 0.006703333929181099,
+        "veena": 0.00532221095636487,
+        "violin": 0.1892145425081253
+      }
+    },
+    {
+      "stem_name": "Pred: Vocals",
+      "top_class": "violin",
+      "top_probability": 0.6691811084747314,
+      "percussion_energy_pct": 0.26618120074272156,
+      "melodic_energy_pct": 72.8052978515625,
+      "full_distribution": {
+        "bass": 0.0006489083170890808,
+        "drums": 0.0020816263277083635,
+        "flute": 0.014704931527376175,
+        "guitar": 0.2059679925441742,
+        "piano": 0.0012694235192611814,
+        "sarod": 0.04669403284788132,
+        "sitar": 0.05411474406719208,
+        "tabla": 0.0005801857332699001,
+        "veena": 0.004757107235491276,
+        "violin": 0.6691811084747314
+      }
+    },
+    {
+      "stem_name": "Pred: Violin",
+      "top_class": "violin",
+      "top_probability": 0.8820146918296814,
+      "percussion_energy_pct": 0.012444516643881798,
+      "melodic_energy_pct": 88.7269058227539,
+      "full_distribution": {
+        "bass": 1.0595086678222287e-05,
+        "drums": 2.0459856386878528e-05,
+        "flute": 0.02150851860642433,
+        "guitar": 0.03166169300675392,
+        "piano": 0.0016346982447430491,
+        "sarod": 0.05779092013835907,
+        "sitar": 0.004884297959506512,
+        "tabla": 0.0001039853086695075,
+        "veena": 0.0003700865781866014,
+        "violin": 0.8820146918296814
+      }
+    },
+    {
+      "stem_name": "Pred: Mridangam",
+      "top_class": "sitar",
+      "top_probability": 0.2815530300140381,
+      "percussion_energy_pct": 13.79710578918457,
+      "melodic_energy_pct": 54.126869201660156,
+      "full_distribution": {
+        "bass": 0.011915192008018494,
+        "drums": 0.0532667376101017,
+        "flute": 0.005649712402373552,
+        "guitar": 0.08073209226131439,
+        "piano": 0.0033215193543583155,
+        "sarod": 0.21914173662662506,
+        "sitar": 0.2815530300140381,
+        "tabla": 0.08470431715250015,
+        "veena": 0.09782785177230835,
+        "violin": 0.16188782453536987
+      }
+    },
+    {
+      "stem_name": "Pred: Ghatam",
+      "top_class": "violin",
+      "top_probability": 0.4181804955005646,
+      "percussion_energy_pct": 9.750822067260742,
+      "melodic_energy_pct": 65.34294128417969,
+      "full_distribution": {
+        "bass": 0.010460063815116882,
+        "drums": 0.07851234823465347,
+        "flute": 0.021199487149715424,
+        "guitar": 0.11024491488933563,
+        "piano": 0.002615602919831872,
+        "sarod": 0.1045423299074173,
+        "sitar": 0.19495604932308197,
+        "tabla": 0.018995875492691994,
+        "veena": 0.04029284790158272,
+        "violin": 0.4181804955005646
+      }
+    }
+  ]
+}

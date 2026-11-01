@@ -1,0 +1,24 @@
+{
+  "evaluation_split": "Concert 03 (Held-Out Out-of-Distribution Validation)",
+  "num_evaluated_chunks": 25,
+  "individual_4stem": {
+    "vocals_sdr_mean": 10.696112437726004,
+    "vocals_sdr_std": 6.02238745592088,
+    "violin_sdr_mean": 6.308264924677733,
+    "violin_sdr_std": 3.4556287028006807,
+    "mridangam_sdr_mean": 1.7502140983756806,
+    "mridangam_sdr_std": 11.162281052293407,
+    "ghatam_sdr_mean": -6.077158622871123,
+    "ghatam_sdr_std": 7.0678494870775275,
+    "overall_mean_4stem_sdr": 3.169358209477073
+  },
+  "collapsed_2stem": {
+    "vocals_sdr_mean": 10.696112437726004,
+    "vocals_sdr_std": 6.02238745592088,
+    "accompaniment_sdr_mean": 8.87002737072479,
+    "accompaniment_sdr_std": 2.8989529367318574,
+    "overall_mean_2stem_sdr": 9.783069904225396,
+    "sanidha_paper_baseline": 7.87,
+    "delta_vs_paper": 1.913069904225396
+  }
+}
