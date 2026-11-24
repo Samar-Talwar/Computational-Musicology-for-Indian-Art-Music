@@ -268,3 +268,6 @@ Thumbs.db
 
 data/staged*
 *.zip
+
+# Local analysis state
+/.ua/

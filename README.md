@@ -4,7 +4,27 @@
 
 An end-to-end pipeline: spectrogram profiling (HPSS) → neural fine-tuning (demucs-infer / HDemucs) → waveform resynthesis → instrument classification (TimbreCNN). Benchmarked against the Sanidha/Carnatic multi-track baseline ([arXiv:2501.06959](https://arxiv.org/abs/2501.06959)).
 
-`Python 3.13` · `Windows / Linux` · `117 passed` · `4 milestones` · `25+ modules` · `5 notebooks`
+`Python 3.13` · `demucs-infer 4.2.2` · `Windows / Linux` · `117 passed` · `4 milestones` · `25+ modules` · `5 notebooks`
+
+## Grader's Fast-Track
+
+| Headline result | Locked value | Evidence |
+| --- | --- | --- |
+| Collapsed 2-stem SDR | **9.78 dB** (+1.91 vs paper 7.87) | [metrics](experiments/sanidha_4stem_concert03_metrics.json) · 25 Concert 03 validation chunks |
+| 4-stem mean SDR | **3.17 dB** | [metrics](experiments/sanidha_4stem_concert03_metrics.json) · **not directly comparable with 7.87** |
+| TimbreCNN validation | **89.5%** | [Milestone 4 audit](experiments/milestone4_timbre_audit.json) · [notebook 04](notebooks/04_colab_milestone4_timbre_cnn.ipynb) |
+| Saraga live-concert audit | **16.21/19.12 dB HPR**; **51.90%** vocal bleed | [Saraga audit](experiments/saraga_noise_resilience_audit.json) · 15 chunks / 90 s |
+
+**Artifacts:** [baseline JSON](experiments/baseline_hdemucs_concert3.json) · [4-stem metrics](experiments/sanidha_4stem_concert03_metrics.json) · [Milestone 4 audit](experiments/milestone4_timbre_audit.json) · [4-stem timbre audit](experiments/sanidha_4stem_timbre_audit.json) · [Saraga audit](experiments/saraga_noise_resilience_audit.json)
+**Notebooks:** [03 — 2-stem fine-tuning](notebooks/03_colab_finetune_hdemucs.ipynb) · [04 — TimbreCNN](notebooks/04_colab_milestone4_timbre_cnn.ipynb) · [05 — executed 4-stem logs/evaluation](notebooks/05_colab_4stem_finetuning.ipynb)
+
+**Test reproduction only** — does not reproduce dataset metrics, which require external Sanidha audio and Colab checkpoints:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
 
 ---
@@ -53,11 +73,11 @@ Modules: preprocessing (stft, hpss, pipeline) → models (separator, dataset, cl
 Sanidha paper (2-stem, target)      ████████                      +7.87
 Our 2-stem (non-vocal summed)       ██████████                    +9.78
 Our 4-stem mean (NOT vs 7.87)       ███                           +3.17
-Zero-training HDemucs (Exp. 0)      ░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -26.6
+Zero-training HDemucs vocal (Exp. 0) ░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -26.66
                                     scale: 1 block ≈ 1 dB (░ = negative SDR)
 ```
 
-*Data from `experiments/baseline_hdemucs_concert3.json` (6 songs, Concert03) and `experiments/sanidha_4stem_concert03_metrics.json`. Classifier validation accuracy (89.5%; 10 instruments: bass, drums, flute, guitar, piano, sarod, sitar, tabla, veena, violin; `milestone4_timbre_audit.json`) is a different metric and is intentionally not plotted on the SDR axis.*
+*Data from `experiments/baseline_hdemucs_concert3.json` (6 songs, Concert03; vocals **-26.66 dB** SDR, accompaniment **-23.64 dB** SDR) and `experiments/sanidha_4stem_concert03_metrics.json`. Classifier validation accuracy (89.5%; 10 instruments: bass, drums, flute, guitar, piano, sarod, sitar, tabla, veena, violin; `milestone4_timbre_audit.json`) is a different metric and is intentionally not plotted on the SDR axis.*
 
 > **Open Decisions (CLAUDE.md) — Not Resolved.**
 > (1) Spleeter baseline reproduction: isolated old-Python venv vs direct citation with caveat.
@@ -110,13 +130,13 @@ Four stages with explicit I/O contracts. All synthetic fixtures `float32` (CLAUD
 
 ## 03 — Complete Directory Tree
 
-Every file committed (excluding `.venv/`, `.claude/`, `.git/`, `data/raw/`, `data/processed/`, `*.zip`, model checkpoints). Total ~70 tracked source files + 5 notebooks + 14 test files.
+Every file committed (excluding `.venv/`, `.claude/`, `.git/`, `data/raw/`, `data/processed/`, `*.zip`, model checkpoints). Total 61 tracked files: 32 Python files, 5 notebooks, and 12 test modules.
 
 ```text
 Computational-Musicology-for-Indian-Art-Music/
 ├── README.md                          # project overview (this file)
 ├── CLAUDE.md                          # project conventions + adversarial review rules
-├── requirements.txt                   # 159 pinned dependencies (black, pytest, torch, demucs-infer, ...)
+├── requirements.txt                   # 158 pinned dependencies (black, pytest, torch, demucs-infer, ...)
 ├── .gitignore                         # audio + checkpoints + env + worktrees
 ├── .pytest_cache/                     # test artifacts (ignored by .gitignore)
 │
@@ -157,7 +177,7 @@ Computational-Musicology-for-Indian-Art-Music/
 │   ├── 04_colab_milestone4_timbre_cnn.ipynb # TimbreCNN architecture + MFCC
 │   └── 05_colab_4stem_finetuning.ipynb  # 4-stem adapter + mapping
 │
-├── tests/                             # 14 test modules (TDD for preprocessing/models/eval)
+├── tests/                             # 12 test modules (TDD for preprocessing/models/eval)
 │   ├── __init__.py
 │   ├── test_stft.py
 │   ├── test_hpss.py
@@ -180,7 +200,7 @@ Computational-Musicology-for-Indian-Art-Music/
 │   └── superpowers/                   # broader notes
 │
 ├── experiments/                       # JSON artifacts from runs
-│   ├── baseline_hdemucs_concert3.json  # 0-training baseline (-26.6 dB SDR)
+│   ├── baseline_hdemucs_concert3.json  # 0-training baseline (vocal -26.66 dB SDR)
 │   ├── milestone4_timbre_audit.json     # bleed audit (temp. overlap)
 │   ├── sanidha_4stem_concert03_metrics.json  # 4-stem / 2-stem collapse (Nov 1)
 │   ├── sanidha_4stem_timbre_audit.json
@@ -206,7 +226,7 @@ Computational-Musicology-for-Indian-Art-Music/
 | `models/classifier.py` | `TimbreCNN`, `extract_mfcc` | `x: (B,1,40,T) → (B,10)`; MFCC: `audio → (40,87)` float32 | 3 conv + BN + ReLU + MaxPool + AdaptiveAvgPool + Dropout(0.3) + Linear(128→10) |
 | `models/dataset.py` | `SanidhaStagedDataset` | `manifest_path, root_dir → (mix_t, targets_t) (2, N) / (2,2,N)` | 6 s chunks; 44100 Hz; required cols: mix/vocals/accompaniment_path |
 | `evaluation/metrics.py` | `evaluate_separation`, `collapse_to_two_stem`, `_si_sdr` | `ref_stems, est_stems, per_channel/mono → {stem: {SDR,SIR,SAR,SI-SDR}}` | Uses mir_eval 0.8.2 bss_eval_sources (deprecated, suppressed); SI-SDR local; float32/finite checks |
-| `evaluation/baseline.py` | Baseline runner | Eval on Concert 3 with zero-training HDemucs | Baseline SDR = -26.6 dB (Experiment 0) |
+| `evaluation/baseline.py` | Baseline runner | Eval on Concert 3 with zero-training HDemucs | Vocal SDR = -26.66 dB; accompaniment = -23.64 dB (Experiment 0) |
 | `evaluation/saraga_benchmark.py` | `load_saraga_excerpts`, `audit_saraga_noise_resilience` | `load_saraga_excerpts(saraga_dir, seg_dur=6.0, max_chunks=15) → list[dict]`; `audit_saraga_noise_resilience(chunks, ...) → dict` | Validates 44100 Hz, filters RMS > 0.02, runs HDemucs2Stem + TimbreCNN + HPSS bleed audit; native Python serializable |
 | `scripts/separate.py` | `separate_file`, `main` | CLI: `--input -i --output-dir -o --checkpoint -c --device --chunk-duration --num-stems -n` | 2/4 stems; chunked; chunk_duration >=0; SR validation 44100 |
 | `scripts/audit_sanidha.py` | `main` | Read-only audit of dataset root; writes CSV; parses `ConcertXX/song/Audio-Multitracks-<Clean\|Processed>` | Env: SANIDHA_ROOT (default OneDrive path) |
@@ -221,7 +241,7 @@ Computational-Musicology-for-Indian-Art-Music/
 
 ## 05 — Test Inventory (Strict TDD)
 
-14 modules in `tests/`. Philosophy: **exploratory-first** for notebooks (visualise before test); **strict TDD** for preprocessing / models / evaluation once technique is chosen. Synthetic fixtures **must** be `float32`.
+12 modules in `tests/`. Philosophy: **exploratory-first** for notebooks (visualise before test); **strict TDD** for preprocessing / models / evaluation once technique is chosen. Synthetic fixtures **must** be `float32`.
 
 | Test File | Test Class | Test Names (verified) | Verifies |
 | --- | --- | --- | --- |
@@ -346,7 +366,7 @@ Requirements:
 
 | File | Purpose | Key Metrics / Values |
 | --- | --- | --- |
-| `experiments/baseline_hdemucs_concert3.json` | 0-training HDemucs baseline on Concert 03 | SDR ~ -26.6 dB (expected — untrained model on domain) |
+| `experiments/baseline_hdemucs_concert3.json` | 0-training HDemucs baseline on Concert 03 | Vocal SDR -26.66 dB; accompaniment -23.64 dB (expected — untrained model on domain) |
 | `experiments/sanidha_4stem_concert03_metrics.json` | 4-stem evaluation (Nov 1) on held-out Concert 03 | 4-stem mean 3.17 dB; 2-stem collapsed 9.78 dB; vocals 10.70, violin 6.31, mridangam 1.75, ghatam -6.08; delta +1.91 vs paper 7.87 |
 | `experiments/sanidha_4stem_timbre_audit.json` | Timbre bleed audit — temporal overlap of instruments | Overlap percentages; bleed detection per instrument |
 | `experiments/milestone4_timbre_audit.json` | Milestone 4 bleed audit report | Detailed overlap statistics |
@@ -369,9 +389,9 @@ Requirements:
 
 | Configuration | 2-stem SDR | 4-stem Mean | Notes |
 | --- | --- | --- | --- |
-| Zero-training HDemucs (Experiment 0) | — | ~ -26.6 dB | Untrained model; confirms domain mismatch |
+| Zero-training HDemucs (Experiment 0) | vocals -26.66 / accompaniment -23.64 | — | Untrained model; confirms domain mismatch |
 | Fine-tuned 2-stem (MD2 / MD3) | ~ 7.87 (paper) | — | Published baseline; locked comparative benchmark |
-| Our 2-stem collapsed (Nov 1, 25 chunks) | **9.78 dB** (mean) / ±2.90 std | — | +1.91 vs paper; explicit methodological note required |
+| Our 2-stem collapsed (Nov 1, 25 chunks) | **9.78 dB** (overall mean); accompaniment 8.87 ± 2.90 dB | — | +1.91 vs paper; explicit methodological note required |
 | Our 4-stem (Nov 1, 25 chunks) | — | **3.17 dB** (mean) / vocals 10.70 ±6.02, violin 6.31 ±3.46, mridangam 1.75 ±11.16, ghatam -6.08 ±7.07 | Ghatam weakest (absent in some concerts); high variance on mridangam |
 
 *Figure 9 — Evaluation table with all verified numbers from `experiments/sanidha_4stem_concert03_metrics.json`. No fabricated values; all from committed JSON artifacts.*
@@ -427,7 +447,7 @@ Major commits from repository history (`git log --oneline --all -n 20`). Feature
 
 | File | Purpose | Key Contents |
 | --- | --- | --- |
-| `requirements.txt` | Pinned dependencies (159 packages) | anyio==4.15.0, argon2-cffi==25.1.0, arrow==1.4.0, black==26.5.1, demucs-infer==4.2.2, librosa==0.10.2.post1, mir_eval==0.8.2, numpy==2.1.3, pytest==9.1.1, scikit-learn==1.9.0, scipy==1.14.1, soundfile==0.12.1, torch==2.14.1, torchaudio==2.11.0 ... |
+| `requirements.txt` | Pinned dependencies (158 packages) | anyio==4.15.0, argon2-cffi==25.1.0, arrow==1.4.0, black==26.5.1, demucs-infer==4.2.2, librosa==0.10.2.post1, mir_eval==0.8.2, numpy==2.1.3, pytest==9.1.1, scikit-learn==1.9.0, scipy==1.14.1, soundfile==0.12.1, torch==2.14.1, torchaudio==2.11.0 ... |
 | `.gitignore` | Ignore patterns | Data/raw/*, data/processed/* (with .gitkeep exceptions), *.wav, *.mp3, *.pt/*.pth/*.ckpt/*.h5, .venv/, env/, .claude/worktrees/, .idea/, data/staged*, *.zip, experiments/**/logs/, .pytest_cache/ |
 | `CLAUDE.md` | Project conventions + adversarial review rules | 4 stages; dataset descriptions; environment (Python 3.13, venv); metrics conventions (mir_eval vs local SI-SDR); testing philosophy (TDD + exploratory); git workflow (feature branches); mandatory adversarial plan review checklist (unverified APIs, contradictions, expectations, silent defaults, sequencing); open/resolved decisions |
 | `README.md` | Project overview (replaces the original surface-level README) | Overview; pipeline; results; layout; setup; open decisions |
@@ -528,9 +548,9 @@ flowchart LR
 
 1. **Python 3.13** (required — demucs-infer 4.2.2 / torch 2.14.1 compatible; old PyTorch/TensorFlow incompatible).
 2. **Virtual environment**: `python -m venv .venv`; activate: `.\.venv\Scripts\Activate.ps1` (Windows) or `source .venv/bin/activate` (Linux).
-3. **Install dependencies**: `pip install -r requirements.txt` (159 pinned packages; takes ~3-5 min).
+3. **Install dependencies**: `pip install -r requirements.txt` (158 pinned packages; takes ~3-5 min).
 4. **Dataset (not committed)**: Place the Sanidha root anywhere and set the `SANIDHA_ROOT` env var (the default in `scripts/audit_sanidha.py` is a local OneDrive path). Audio goes to `data/raw/` (gitignored); processed features to `data/processed/` (gitignored).
-5. **Run tests**: `pytest tests/ -q` (14 modules, TDD verified).
+5. **Run tests**: `pytest tests/ -q` (12 modules, TDD verified).
 6. **Format**: `black preprocessing/ models/ evaluation/ scripts/ utils/`.
 
 > **Adversarial verification required (CLAUDE.md).** Before any new plan: verify every imported function/class/attribute exists with that exact name; trace variables across steps; do not treat planned tests as evidence; flag silent defaults; confirm sequencing (verification before step, not after). Reviewer must be adversarial, not supportive.
