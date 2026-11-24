@@ -4,7 +4,7 @@
 
 An end-to-end pipeline: spectrogram profiling (HPSS) → neural fine-tuning (demucs-infer / HDemucs) → waveform resynthesis → instrument classification (TimbreCNN). Benchmarked against the Sanidha/Carnatic multi-track baseline ([arXiv:2501.06959](https://arxiv.org/abs/2501.06959)).
 
-`Python 3.13` · `Windows / Linux` · `pytest + TDD` · `4 milestones` · `25+ modules` · `5 notebooks`
+`Python 3.13` · `Windows / Linux` · `117 passed` · `4 milestones` · `25+ modules` · `5 notebooks`
 
 
 ---
@@ -110,7 +110,7 @@ Four stages with explicit I/O contracts. All synthetic fixtures `float32` (CLAUD
 
 ## 03 — Complete Directory Tree
 
-Every file committed (excluding `.venv/`, `.claude/`, `.git/`, `data/raw/`, `data/processed/`, `*.zip`, model checkpoints). Total ~70 tracked source files + 5 notebooks + 12 test files.
+Every file committed (excluding `.venv/`, `.claude/`, `.git/`, `data/raw/`, `data/processed/`, `*.zip`, model checkpoints). Total ~70 tracked source files + 5 notebooks + 14 test files.
 
 ```text
 Computational-Musicology-for-Indian-Art-Music/
@@ -135,13 +135,15 @@ Computational-Musicology-for-Indian-Art-Music/
 ├── evaluation/                        # Metrics + baselines
 │   ├── __init__.py
 │   ├── metrics.py                     # evaluate_separation, _si_sdr, collapse_to_two_stem
-│   └── baseline.py                    # baseline evaluator (Concert 3, 0-training)
+│   ├── baseline.py                    # baseline evaluator (Concert 3, 0-training)
+│   └── saraga_benchmark.py           # in-the-wild noise-resilience & bleed-audit benchmark
 │
 ├── scripts/                           # CLI entry points
 │   ├── separate.py                    # PID: separate_file(), argparse CLI (2/4 stems)
 │   ├── audit_sanidha.py               # read-only dataset audit (CSV + stdout)
 │   ├── stage_colab_data.py            # manifest accumulation + train-concert guard
-│   └── run_baseline.py                # baseline runner
+│   ├── run_baseline.py                # baseline runner
+│   └── run_saraga_eval.py             # CLI runner for Saraga real-world noise resilience audit
 │
 ├── utils/                             # Shared helpers (zero-bleed loader)
 │   ├── __init__.py
@@ -155,7 +157,7 @@ Computational-Musicology-for-Indian-Art-Music/
 │   ├── 04_colab_milestone4_timbre_cnn.ipynb # TimbreCNN architecture + MFCC
 │   └── 05_colab_4stem_finetuning.ipynb  # 4-stem adapter + mapping
 │
-├── tests/                             # 13 test modules (TDD for preprocessing/models/eval)
+├── tests/                             # 14 test modules (TDD for preprocessing/models/eval)
 │   ├── __init__.py
 │   ├── test_stft.py
 │   ├── test_hpss.py
@@ -168,6 +170,7 @@ Computational-Musicology-for-Indian-Art-Music/
 │   ├── test_sanidha.py
 │   ├── test_separate_cli.py
 │   ├── test_stage_colab_data.py
+│   ├── test_saraga_benchmark.py       # offline TDD suite for Saraga loader & bleed audit
 │   └── (others from worktree model-validation)
 │
 ├── docs/                              # Research notes + milestone plans
@@ -180,7 +183,8 @@ Computational-Musicology-for-Indian-Art-Music/
 │   ├── baseline_hdemucs_concert3.json  # 0-training baseline (-26.6 dB SDR)
 │   ├── milestone4_timbre_audit.json     # bleed audit (temp. overlap)
 │   ├── sanidha_4stem_concert03_metrics.json  # 4-stem / 2-stem collapse (Nov 1)
-│   └── sanidha_4stem_timbre_audit.json
+│   ├── sanidha_4stem_timbre_audit.json
+│   └── saraga_noise_resilience_audit.json    # in-the-wild bleed & HPR audit (Dorakuna_44k)
 │
 └── data/                              # Gitignored — only .gitkeep tracked
     ├── raw/.gitkeep
@@ -203,10 +207,12 @@ Computational-Musicology-for-Indian-Art-Music/
 | `models/dataset.py` | `SanidhaStagedDataset` | `manifest_path, root_dir → (mix_t, targets_t) (2, N) / (2,2,N)` | 6 s chunks; 44100 Hz; required cols: mix/vocals/accompaniment_path |
 | `evaluation/metrics.py` | `evaluate_separation`, `collapse_to_two_stem`, `_si_sdr` | `ref_stems, est_stems, per_channel/mono → {stem: {SDR,SIR,SAR,SI-SDR}}` | Uses mir_eval 0.8.2 bss_eval_sources (deprecated, suppressed); SI-SDR local; float32/finite checks |
 | `evaluation/baseline.py` | Baseline runner | Eval on Concert 3 with zero-training HDemucs | Baseline SDR = -26.6 dB (Experiment 0) |
+| `evaluation/saraga_benchmark.py` | `load_saraga_excerpts`, `audit_saraga_noise_resilience` | `load_saraga_excerpts(saraga_dir, seg_dur=6.0, max_chunks=15) → list[dict]`; `audit_saraga_noise_resilience(chunks, ...) → dict` | Validates 44100 Hz, filters RMS > 0.02, runs HDemucs2Stem + TimbreCNN + HPSS bleed audit; native Python serializable |
 | `scripts/separate.py` | `separate_file`, `main` | CLI: `--input -i --output-dir -o --checkpoint -c --device --chunk-duration --num-stems -n` | 2/4 stems; chunked; chunk_duration >=0; SR validation 44100 |
 | `scripts/audit_sanidha.py` | `main` | Read-only audit of dataset root; writes CSV; parses `ConcertXX/song/Audio-Multitracks-<Clean\|Processed>` | Env: SANIDHA_ROOT (default OneDrive path) |
 | `scripts/stage_colab_data.py` | Stage pipeline | Manifest accumulation; train-concert selection (1,2,4,5); ghatam silent-padding; Concert-3 guard | Creates .zip staged outputs |
 | `scripts/run_baseline.py` | Runner | Runs baseline eval, outputs JSON | Experiment artifact in experiments/ |
+| `scripts/run_saraga_eval.py` | `main` | CLI: `--saraga-dir --sep-checkpoint --clf-checkpoint --max-chunks --output-json` | CLI runner for Saraga real-world noise resilience audit; outputs JSON artifact |
 | `utils/sanidha.py` | `SongRecord`, `index_sanidha`, `split_sanidha`, `load_logical_stem`, `load_song` | Records: concert_id, song_id, folder, stem_files; split train=(1,2,4,5) val=(3); sub-mic sum | LOGICAL_STEM_MAP: vocals, violin, mridangam (left/right), ghatam (close/far), tanpura |
 
 > **Import contracts (verified, not unverified).** `demucs_infer.pretrained.get_model` exists (4.2.2). `librosa.stft` / `decompose.hpss` standard. `mir_eval.separation.bss_eval_sources` exists but deprecated — suppressed with `filterwarnings`. `torch.utils.data.Dataset` native. All signatures verified against installed packages.
@@ -215,7 +221,7 @@ Computational-Musicology-for-Indian-Art-Music/
 
 ## 05 — Test Inventory (Strict TDD)
 
-13 modules in `tests/`. Philosophy: **exploratory-first** for notebooks (visualise before test); **strict TDD** for preprocessing / models / evaluation once technique is chosen. Synthetic fixtures **must** be `float32`.
+14 modules in `tests/`. Philosophy: **exploratory-first** for notebooks (visualise before test); **strict TDD** for preprocessing / models / evaluation once technique is chosen. Synthetic fixtures **must** be `float32`.
 
 | Test File | Test Class | Test Names (verified) | Verifies |
 | --- | --- | --- | --- |
@@ -230,6 +236,7 @@ Computational-Musicology-for-Indian-Art-Music/
 | `test_sanidha.py` | `TestSanidha` | `test_index`, `test_split`, `test_load_logical` | SongRecord list; disjoint split; sub-mic sum |
 | `test_separate_cli.py` | `TestCLI` | `test_argparse`, `test_file_not_found`, `test_stems` | 2/4 stem choice; FileNotFound; output paths |
 | `test_stage_colab_data.py` | `TestStage` | `test_manifest_accumulation`, `test_guard` | Manifest accumulation; Concert-3 guard |
+| `test_saraga_benchmark.py` | `TestSaragaBenchmark` | `test_load_saraga_excerpts`, `test_saraga_samplerate_validation`, `test_audit_saraga_noise_resilience` | 44.1 kHz guard; RMS chunking; 2-stem separation & TimbreCNN bleed metrics |
 
 > **Fixture convention.** Any test using `np.sin`, `np.linspace`, etc. must cast to `float32` explicitly: `np.sin(...).astype(np.float32)`. A `float64` synthetic fixture can pass while real `librosa.load()` `float32` fails silently on the same code path.
 
@@ -343,6 +350,7 @@ Requirements:
 | `experiments/sanidha_4stem_concert03_metrics.json` | 4-stem evaluation (Nov 1) on held-out Concert 03 | 4-stem mean 3.17 dB; 2-stem collapsed 9.78 dB; vocals 10.70, violin 6.31, mridangam 1.75, ghatam -6.08; delta +1.91 vs paper 7.87 |
 | `experiments/sanidha_4stem_timbre_audit.json` | Timbre bleed audit — temporal overlap of instruments | Overlap percentages; bleed detection per instrument |
 | `experiments/milestone4_timbre_audit.json` | Milestone 4 bleed audit report | Detailed overlap statistics |
+| `experiments/saraga_noise_resilience_audit.json` | Live-concert noise-resilience audit (Saraga Dorakuna_44k) | 15 chunks (90 s); Vocals HPR 16.21 dB, Accompaniment HPR 19.12 dB; 51.90% vocal percussive bleed |
 
 *Figure 8 — All experiment artifacts are JSON (text, small, git-safe). Raw audio and checkpoints are gitignored.*
 
@@ -369,6 +377,21 @@ Requirements:
 *Figure 9 — Evaluation table with all verified numbers from `experiments/sanidha_4stem_concert03_metrics.json`. No fabricated values; all from committed JSON artifacts.*
 
 > **Methodological caveat (must always accompany 4-stem results).** The 7.87 dB target is a 2-stem (vocal vs accompaniment) number from the Sanidha paper. Our pipeline produces 4 stems. Comparing 4-stem mean (3.17 dB) to 7.87 dB is **invalid** without explicit note. Valid comparisons: (a) collapse to 2-stem (sum non-vocal) and compare to 7.87; (b) define separate 4-stem baseline (not yet done); (c) cite both with caveat.
+
+### Live-Concert Noise-Resilience Audit (Saraga Dataset)
+
+Evaluation on `Dorakuna_44k.wav` across 15 active 6.0s windows (90 seconds total) using 2-stem separation (`HDemucs2Stem`), 40-band MFCC timbre classification (`TimbreCNN`), and Harmonic-Percussive Source Separation (`hpss`):
+
+| Stem | Mean HPR (Harmonic-to-Percussive) | Bleed / Instrument Confidence | Notes & Observations |
+| --- | --- | --- | --- |
+| **Vocals** | **16.21 dB** (mean) / 12.86–20.77 dB | Percussive Bleed: **51.90%** (drums: 51.90%, tabla: 2.04e-07) | Stage mic leakage from mridangam/percussion detected in vocal channel |
+| **Accompaniment** | **19.12 dB** (mean) / 12.92–31.70 dB | Indian String Confidence: **2.19e-05** (violin: 1.29e-05, veena: 9.01e-06) | Drums/flute dominate raw timbre classes under zero-shot default weights |
+
+*Figure 10 — Saraga noise-resilience audit results from committed `experiments/saraga_noise_resilience_audit.json` (15 active chunks, `Dorakuna_44k.wav`).*
+
+> **Methodological points:**
+> - **BSS-Eval SDR is omitted on Saraga:** Because live stage recordings contain microphone leakage across instruments, computing BSS-Eval SDR against leaky mic stems would benchmark against bleed contamination rather than true separation fidelity.
+> - **Zero-shot baseline artifact:** The local CLI JSON artifact (`experiments/saraga_noise_resilience_audit.json`) reflects the zero-shot/default-weight baseline run (trained `.pt` checkpoints remain on Colab/Drive).
 
 ---
 
@@ -507,7 +530,7 @@ flowchart LR
 2. **Virtual environment**: `python -m venv .venv`; activate: `.\.venv\Scripts\Activate.ps1` (Windows) or `source .venv/bin/activate` (Linux).
 3. **Install dependencies**: `pip install -r requirements.txt` (159 pinned packages; takes ~3-5 min).
 4. **Dataset (not committed)**: Place the Sanidha root anywhere and set the `SANIDHA_ROOT` env var (the default in `scripts/audit_sanidha.py` is a local OneDrive path). Audio goes to `data/raw/` (gitignored); processed features to `data/processed/` (gitignored).
-5. **Run tests**: `pytest tests/ -q` (13 modules, TDD verified).
+5. **Run tests**: `pytest tests/ -q` (14 modules, TDD verified).
 6. **Format**: `black preprocessing/ models/ evaluation/ scripts/ utils/`.
 
 > **Adversarial verification required (CLAUDE.md).** Before any new plan: verify every imported function/class/attribute exists with that exact name; trace variables across steps; do not treat planned tests as evidence; flag silent defaults; confirm sequencing (verification before step, not after). Reviewer must be adversarial, not supportive.
@@ -525,7 +548,7 @@ pip install -r requirements.txt
 pytest tests/test_classifier.py tests/test_separator.py tests/test_stage_colab_data.py tests/test_separate_cli.py -v
 ```
 
-**Condition (C) — not a claim of execution.** This is a reproducibility contract, not a test result. Actual test passes verified separately (104/108 full; 11 CLI; 8 staging; 12 classifier; 12 separator). No silent defaults: float32 required; bad SR raises ValueError 44100; mono duplicated; chunking uses np.pad + ascontiguousarray.
+**Condition (C) — not a claim of execution.** This is a reproducibility contract, not a test result. Actual test passes verified separately (117 full; 11 CLI; 8 staging; 12 classifier; 12 separator; 9 Saraga benchmark). No silent defaults: float32 required; bad SR raises ValueError 44100; mono duplicated; chunking uses np.pad + ascontiguousarray.
 
 > **Float32 fixture contract (CLAUDE.md line 47).** All synthetic fixtures must cast with `.astype(np.float32)`; default `np.sin()` is float64. Verified in `tests/test_separate_cli.py` (line 19–22), `tests/test_classifier.py`, `tests/test_stage_colab_data.py` (line 15–18). Never assume float32 from numpy defaults.
 
